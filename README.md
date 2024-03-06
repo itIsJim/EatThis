@@ -74,7 +74,7 @@ If you are using the `.env` file, make sure to add the `.env` file to your `.git
 
 - Verification: Verify the setup by typing `echo $OPENAI_API_KEY` in the terminal. It should display your API key.
 
-###### MacOS
+###### Windows
 
 - Open Command Prompt: You can find it by searching "cmd" in the start menu.
 
