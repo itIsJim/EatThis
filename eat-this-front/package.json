@@ -10,11 +10,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
-    "@tensorflow/tfjs": "^4.17.0",
     "clsx": "^2.1.0",
     "dotenv": "^16.4.5",
-    "firebase": "^10.8.0",
-    "firebase-admin": "^12.0.0",
     "framer-motion": "^11.0.8",
     "next": "^14.1.0",
     "openai": "^4.28.0",

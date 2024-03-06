@@ -11,24 +11,29 @@ export const useTextContext = () => {
     return context;
 };
 
+
+
 export const GlobalProvider = ({ children }) => {
     const[headerText, setHeaderText] = useState("Welcome to Eat This")
     const[imagePrompt, setImagePrompt] = useState({
         message:"",
         data:""
     })
+    const [isNewItemSaved, setIsNewItemSaved] = useState(false);
+
     const updateTextPromptContext = (newValues) => {
         setHeaderText(newValues);
     };
 
     const updateImagePromptContext = (newValues) => {
         setImagePrompt(newValues);
+        setIsNewItemSaved(false)
     };
 
     const updateNewListItem = (newValues) => {
         const oldList = JSON.parse(localStorage.getItem('List'));
-        localStorage.setItem('List', JSON.stringify(oldList ? [...oldList, newValues] : [newValues]));
-        console.log(newValues)
+        localStorage.setItem('List', JSON.stringify(oldList ? [newValues, ...oldList] : [newValues]));
+        setIsNewItemSaved(true);
     }
 
     return (
@@ -38,6 +43,8 @@ export const GlobalProvider = ({ children }) => {
             imagePrompt,
             headerText,
             updateTextPromptContext,
+            isNewItemSaved,
+            setIsNewItemSaved
         }}>
             {children}
         </TextPromptContext.Provider>

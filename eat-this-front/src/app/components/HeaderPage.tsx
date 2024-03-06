@@ -1,18 +1,20 @@
 'use client'
 
-import React from "react";
+import React, {useEffect} from "react";
 import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
 import { useTextContext} from "@/app/store/store";
 import Link from "next/link";
-
+import {Badge} from "@/app/components/utils/Badge/Badge";
 
 
 export default function HeaderPage({children}: Readonly<{
     children: React.ReactNode;
 }>) {
+    const {headerText, isNewItemSaved} = useTextContext();
 
-    const {headerText} = useTextContext();
-
+    useEffect(() => {
+        console.log(headerText)
+    }, [headerText]);
 
     return (
         <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -24,11 +26,13 @@ export default function HeaderPage({children}: Readonly<{
                         target="_self"
                         rel="noopener noreferrer"
                     >
-                        <span>🏠</span>
+                           <div className="hover:cursor-pointer mr-10">
+                               <Badge dot={isNewItemSaved}>
+                                   <span>🏠</span>
+                               </Badge>
+                           </div>
                     </Link>
-                    {
-                        headerText? <TextPrompt text={headerText}/>:<></>
-                    }
+                    <TextPrompt text={headerText}/>
                 </div>
                 <div className="fixed bottom-0 left-0 flex h-48 w-full items-start justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
                     {/*<a*/}

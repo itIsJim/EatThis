@@ -6,10 +6,11 @@ import {useTextContext} from "@/app/store/store";
 
 
 const List = () => {
-    const {updateTextPromptContext} = useTextContext();
+    const {updateTextPromptContext, setIsNewItemSaved} = useTextContext();
     const [list, setList] = useState(JSON.parse(localStorage.getItem('List'))? JSON.parse(localStorage.getItem('List')) : []);
     useEffect(() => {
-        updateTextPromptContext("You can eat these!")
+        updateTextPromptContext("Eat these")
+        setIsNewItemSaved(false)
     }, []);
     return (
         <section className="container">

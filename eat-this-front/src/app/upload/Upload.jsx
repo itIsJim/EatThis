@@ -57,21 +57,18 @@ const dropzone = {
 
 
 const Upload = (props) => {
-    const { imagePrompt, updateTextPromptContext, updateImagePromptContext, updateNewListItem} = useTextContext();
+    const { imagePrompt, updateTextPromptContext, updateImagePromptContext, updateNewListItem, setIsNewItemSaved} = useTextContext();
     const [files, setFiles] = useState([]);
     const [imgData, setImgData] = useState(null);
-    const [newUpload, setNewUpload] = useState('');
-    const [taskID, setTaskID] = useState(null);
-    const [result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [visionResponse, setVisionResponse] = useState(null);
-    const canvasRef = useRef(null);
     const [imgDescription, setImgDescription] = useState('');
     const [newRecipe, setNewRecipe] = useState('');
     const [newDALLEURL, setNewDALLEURL] = useState('');
     const [loadingTopic, setLoadingTopic] = useState('');
     const [isDALLELoading, setIsDALLELoading] = useState(false);
     const [isChatLoading, setIsChatLoading] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const {getRootProps, getInputProps} = useDropzone({
         accept: {
             'image/*': []
@@ -104,34 +101,35 @@ const Upload = (props) => {
         });
     }, [])
 
+
     useEffect(()=>{
         imgData && updateTextPromptContext("Click on Process to get a recipe");
     }, [imgData])
 
     useEffect(() => {
         if(loadingTopic === "vision") {
-            updateTextPromptContext("Let me take a look...");
+            updateTextPromptContext("Let me take a look ...");
         }
-        if (loadingTopic === "chat") {
+        else if (loadingTopic === "chat") {
             updateTextPromptContext("Brainstorming a recipe. Hold on ...");
         }
-        if (loadingTopic === "dalle") {
+        else if (loadingTopic === "dalle") {
             updateTextPromptContext("Here is your Recipe! Now, Let me draw you a picture. Hold on ...");
         }
-        if (loadingTopic === "done") {
+        else if (loadingTopic === "done") {
             updateTextPromptContext("Voila! Here is your recipe and picture!")
         }
-    }, [loadingTopic]);
+    }, [loadingTopic, setLoadingTopic]);
 
 
     useEffect(() => {
         if(imgDescription) {
             setLoadingTopic("chat")
-           handleRecipe(imgDescription).then(r => console.log(r));
+           handleRecipe(imgDescription);
         }
         return function cleanup() {
             if(imgDescription) {
-                handleRecipe(imgDescription).then(r => console.log(r));
+                handleRecipe(imgDescription);
             }
         };
     }, [imgDescription]);
@@ -140,12 +138,12 @@ const Upload = (props) => {
     useEffect(() => {
         if(newRecipe) {
             setLoadingTopic("dalle")
-            handleDALLEPrompt(newRecipe).then(r => console.log(r));
+            handleDALLEPrompt(newRecipe);
         }
         return function cleanup() {
             if(newRecipe) {
                 // updateTextPromptContext(newRecipe);
-                handleDALLEPrompt(newRecipe).then(r => console.log(r));
+                handleDALLEPrompt(newRecipe);
             }
         };
     }, [newRecipe]);
@@ -154,7 +152,35 @@ const Upload = (props) => {
          if (newDALLEURL) {
              setLoadingTopic("done");
          }
+
+         return function cleanup() {
+                if (newDALLEURL){
+                    setLoadingTopic("done");
+                }
+         }
     }, [newDALLEURL]);
+
+    useEffect(() => {
+        if (isProcessing) {
+            setLoadingTopic("vision");
+        }
+
+        return function cleanup() {
+            if (isProcessing) {
+                setLoadingTopic("vision");
+            }
+        }
+    }, [isProcessing]);
+
+    useEffect(()=>{
+        if(isSaved) {
+            updateTextPromptContext("Recipe and Picture saved to your list!");
+        }
+        if (newDALLEURL && !isSaved) {
+            setLoadingTopic("done");
+        }
+
+    }, [isSaved])
 
 
     const handleDALLEPrompt = async (msg) => {
@@ -162,6 +188,7 @@ const Upload = (props) => {
             const response = await nextDalleGeneration(msg);
             setNewDALLEURL(response?.data);
             updateImagePromptContext(response);
+            setIsProcessing(false)
         } catch (error){
             updateTextPromptContext("Oops something went wrong when drawing the picture...");
             console.error("Error generating DALLE prompt:", error);
@@ -173,7 +200,6 @@ const Upload = (props) => {
         try {
             const response = await nextRecipeDescription(msg);
             setNewRecipe(response?.data);
-            console.log(response)
         } catch (error){
             updateTextPromptContext("Oops something went wrong when brainstorming the recipe...");
             console.error("Error generating recipe:", error);
@@ -183,8 +209,9 @@ const Upload = (props) => {
         const formData = new FormData();
         formData.append('image_file', imgData)
         try {
+            setIsSaved(false)
+            setIsProcessing(true)
             const responseData = await nextUploadImage(formData);
-            console.log(responseData)
             setImgDescription(responseData?.data?.choices[0]?.message?.content)
         } catch (error) {
             updateTextPromptContext("Oops something went wrong when processing the image...");
@@ -198,6 +225,8 @@ const Upload = (props) => {
             "image": newDALLEURL
         }
         updateNewListItem(data);
+        setIsSaved(true)
+        setIsNewItemSaved(true)
     }
 
     return (
@@ -205,9 +234,10 @@ const Upload = (props) => {
             <div className="fixed left-0 top-0 flex flex-col w-full justify-center border-none border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
                 {
                     newDALLEURL?
-                        <div className="hover:cursor-pointer" onClick={handleSaveListItem}>
-                        <span>📥</span>
-                    </div>:<></>
+                        !isSaved? <div className="hover:cursor-pointer" onClick={handleSaveListItem}>
+                            <span>📥</span>
+                        </div>:<span>✅</span>
+                        :<></>
                 }
             </div>
             <div className=" flex-col justify-center justify-items-center items-center">

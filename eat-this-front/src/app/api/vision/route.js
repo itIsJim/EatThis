@@ -14,7 +14,6 @@ export const nextUploadImage = async ( imageFile, options={}) => {
         }
 
         const responseData = await response.json();
-        console.log('Vision Response:', responseData);
         return responseData;
     } catch (error) {
         console.error('Error sending data to backend:', error);
