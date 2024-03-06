@@ -8,7 +8,7 @@ load_dotenv()
 
 def dalle(msg):
 
-    prompt="make a realistic image of a dish using this recipe description" + msg + ""
+    prompt="Make a hyper-realistic and photo-like image of a dish using this recipe description. Only make a single image for one dish." + msg + ""
 
     try:
         print("Running DALL.E...")
@@ -22,9 +22,7 @@ def dalle(msg):
         )
 
         image_url = response.data[0].url
-
+        print("DALL.E Done!")
         return image_url
     except OpenAIError as e:
         print(e)
-
-    print("DALL.E Done!")

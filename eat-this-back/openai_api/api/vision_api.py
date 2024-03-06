@@ -27,7 +27,7 @@ def vision(img):
                 "content": [
                     {
                         "type": "text",
-                        "text": "What’s in this image? Give me string of objects that you can identify delimited by comma, such as \"object1, object2, ...\""
+                        "text": "Analyze the content of the uploaded image carefully. Identify all distinct objects present in the image. Return a list of these objects in a simple, concise format, separated by commas. For example, if you recognize a dog, a tree, and a car in the image, your response should be formatted as 'dog, tree, car'. Please ensure the list is comprehensive and only includes items clearly visible in the image."
                     },
                     {
                         "type": "image_url",
