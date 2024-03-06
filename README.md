@@ -1,7 +1,7 @@
 ## Overview
 ![landing page of the application. Upload in the bottom-left corner and List in the bottom-right](/eat-this-front/public/landing.gif)
 
-This app is a AI agent that helps the user generate recipe with only OpenAI APIs. It allows the user to input a single picture of ingredients and returns a recipe with an image illustration. 
+This app is a GPT-powered AI agent that helps the user generate recipe with OpenAI APIs. It allows the user to input a single picture of ingredients and returns a recipe with an image illustration. 
 
 ## Requirements
 Since the application bundles API services by OpenAI. You will need set up your OpenAI API key in a `.env` file in the `eat-this-back` of the project. The key should be named `OPENAI_API_KEY`.
