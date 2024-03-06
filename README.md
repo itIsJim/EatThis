@@ -42,7 +42,7 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Eat this!
-![illustration of the UI in upload_page](/eat-this-front/public/upload.gif)
+![illustration of the UI in upload_page](/eat-this-front/public/upload_page.gif)
 
 ## OpenAI Configuration
 Please refer to the [OpenAI API documentation](https://beta.openai.com/docs/) to get your API key if you don't have one already.
