@@ -1,7 +1,7 @@
 ## Overview
 ![landing page of the application. Upload in the bottom-left corner and List in the bottom-right](/eat-this-front/public/landing.gif)
 
-This app is a GPT-powered generative AI that helps the user generate recipes with OpenAI APIs. It allows the user to input a single picture of ingredients and returns a recipe with an image illustration. 
+This app is a GPT-powered generative AI software that helps the user generate recipes with OpenAI APIs. It allows the user to input a single picture of ingredients and returns a recipe with an image illustration. 
 
 ## Requirements
 Please refer to OpenAI Configuration or scroll down.
