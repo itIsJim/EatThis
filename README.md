@@ -56,7 +56,7 @@ If you are using the `.env` file, make sure to add the `.env` file to your `.git
 - Open Terminal: You can find it in the Applications folder or search for it using Spotlight (Command + Space).
 
 
-- Edit Bash Profile: Use the command nano `~/.bash_profile` or nano `~/.zshrc` (for newer MacOS versions) to open the profile file in a text editor.
+- Edit Bash Profile: Use the command `nano ~/.bash_profile` or `nano ~/.zshrc` (for newer MacOS versions) to open the profile file in a text editor.
 
 
 - Add Environment Variable: In the editor, add the line below, replacing `your-api-key-here` with your actual API key:
