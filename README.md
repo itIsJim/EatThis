@@ -69,7 +69,7 @@ If you are using the `.env` file, make sure to add the `.env` file to your `.git
 - Save and Exit: Press Ctrl+O to write the changes, followed by Ctrl+X to close the editor.
 
 
-- Load Your Profile: Use the command source `~/.bash_profile` or `source ~/.zshrc` to load the updated profile.
+- Load Your Profile: Use the command `source ~/.bash_profile` or `source ~/.zshrc` to load the updated profile.
 
 
 - Verification: Verify the setup by typing `echo $OPENAI_API_KEY` in the terminal. It should display your API key.
