@@ -4,7 +4,7 @@
 This app is a GPT-powered generative AI software that helps the user generate recipes with OpenAI APIs. It allows the user to input a single picture of ingredients and returns a recipe with an image illustration. 
 
 ## Requirements
-Please refer to OpenAI Configuration or scroll down.
+You must setup your OpenAI to run the program. Please refer to OpenAI Configuration or scroll down.
 
 ## Getting Started
 
@@ -49,7 +49,7 @@ Please refer to the [OpenAI API documentation](https://beta.openai.com/docs/) to
 
 Follow the step-by-step guide to set up your API key for your local system. Or you can simply set up your API key in a `.env` file in the `eat-this-back` of the project, as `OPENAI_API_KEY=sk-...`.
 
-If you are using the `.env` file, make sure to add the `.env` file to your `.gitignore` file to avoid exposing your API key to the public. If the above-mentioned method does not work, please follow the OpenAI API documentation to set up your API key.
+If you are using the `.env` file, make sure to add the `.env` file to your `.gitignore` file to avoid exposing your API key to the public. If the using .env does not work, please follow the OpenAI API documentation to set up your API key.
 
 ###### MacOS
 
