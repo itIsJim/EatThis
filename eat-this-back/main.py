@@ -11,21 +11,15 @@ from pydantic import BaseModel
 from openai_api.route import api_router
 
 
-# Specify the backend for matplotlib
 import matplotlib
 matplotlib.use('Agg')
 
 origins = [
-    "http://localhost:3000",  # Adjust the port if your Next.js app is running on a different port
+    "http://localhost:3000",
 ]
 
-
-# Initialize FastAPI application
 app = FastAPI()
 
-
-
-# CORS middleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
