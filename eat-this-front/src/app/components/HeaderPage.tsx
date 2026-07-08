@@ -6,6 +6,7 @@ import { useTextContext} from "@/app/store/store";
 import Link from "next/link";
 import {Badge} from "@/app/components/utils/Badge/Badge";
 import AuthBar from "@/app/components/AuthBar";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 
 export default function HeaderPage({children}: Readonly<{
@@ -38,6 +39,7 @@ export default function HeaderPage({children}: Readonly<{
                     </Link>
                     <TextPrompt text={headerText}/>
                     <AuthBar/>
+                    <ThemeToggle/>
                 </div>
             </div>
             {

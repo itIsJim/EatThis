@@ -2,6 +2,7 @@
 import Link from "next/link";
 import React, { useState } from 'react';
 import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function Home() {
   const [headerText, setHeaderText] = useState("Welcome to Eat This");
@@ -11,8 +12,9 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-8 lg:p-16">
-      <div className="w-full max-w-4xl">
+      <div className="flex w-full max-w-4xl items-center gap-3">
         <TextPrompt text={headerText}/>
+        <ThemeToggle/>
       </div>
 
       <div className="my-10 flex flex-col items-center">
