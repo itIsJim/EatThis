@@ -2,7 +2,7 @@
 
 EatThis is an AI-powered recipe generator. From a single photograph of ingredients — uploaded or captured in-app — it identifies the ingredients, visualizes them with instance segmentation, generates a recipe, and renders an illustration of the finished dish.
 
-See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model architecture.
+See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model architecture, and [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment (Vercel + Docker + Supabase) and the open/hosted mode model.
 
 ## Project Structure
 

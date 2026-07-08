@@ -16,3 +16,6 @@ eat-this-back/.env
 node_modules/
 .next/
 eat-this-front/.env*.local
+
+# Runtime data (SQLite user db)
+eat-this-back/data/

@@ -166,6 +166,12 @@ const Upload = (props) => {
     }, [isSaved])
 
 
+    const paidCallError = (error, fallbackMsg) => {
+        if (error?.status === 401) return "Please sign in (top right) to generate recipes.";
+        if (error?.status === 402) return "You're out of credits — top up to keep cooking.";
+        return fallbackMsg;
+    };
+
     const handleDALLEPrompt = async (msg) => {
         try {
             const response = await nextDalleGeneration(msg);
@@ -173,7 +179,7 @@ const Upload = (props) => {
             updateImagePromptContext(response);
             setIsProcessing(false)
         } catch (error){
-            updateTextPromptContext("Oops something went wrong when drawing the picture...");
+            updateTextPromptContext(paidCallError(error, "Oops something went wrong when drawing the picture..."));
             console.error("Error generating DALLE prompt:", error);
         }
     }
@@ -184,7 +190,7 @@ const Upload = (props) => {
             const response = await nextRecipeDescription(msg);
             setNewRecipe(response?.data);
         } catch (error){
-            updateTextPromptContext("Oops something went wrong when brainstorming the recipe...");
+            updateTextPromptContext(paidCallError(error, "Oops something went wrong when brainstorming the recipe..."));
             console.error("Error generating recipe:", error);
         }
     }

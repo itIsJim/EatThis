@@ -11,3 +11,6 @@ pillow>=10.0
 numpy>=1.26
 opencv-python-headless>=4.9
 torchvision>=0.19
+pyjwt>=2.8
+cryptography>=42.0
+httpx>=0.27

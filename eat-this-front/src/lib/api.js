@@ -1,10 +1,32 @@
+import { supabase } from './supabase';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 const parseResponse = async (response) => {
     if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const body = await response.json().catch(() => ({}));
+        const error = new Error(body?.detail || `HTTP error! Status: ${response.status}`);
+        error.status = response.status;
+        throw error;
     }
     return response.json();
+};
+
+const authHeaders = async () => {
+    if (!supabase) return {};
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const getConfig = async () => {
+    const response = await fetch(`${API_URL}/config`);
+    return parseResponse(response);
+};
+
+export const getMe = async () => {
+    const response = await fetch(`${API_URL}/auth/me`, { headers: await authHeaders() });
+    return parseResponse(response);
 };
 
 export const nextUploadImage = async (imageFile, options = {}) => {
@@ -30,6 +52,7 @@ export const nextRecipeDescription = async (msg, options = {}) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...(await authHeaders()),
         },
         body: JSON.stringify({ message: msg }),
         ...options,
@@ -42,6 +65,7 @@ export const nextDalleGeneration = async (msg, options = {}) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...(await authHeaders()),
         },
         body: JSON.stringify({ message: msg }),
         ...options,

@@ -1,20 +1,34 @@
-from fastapi import FastAPI, File, HTTPException, UploadFile
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from openai import OpenAIError
 from pydantic import BaseModel
 
+from auth.deps import APP_MODE, HOSTED, charge_credits, optional_user
 from openai_api.api.dalle_api import dalle
 from openai_api.api.gpt_chat_api import gpt_chat
 from openai_api.api.vision_api import vision
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+RECIPE_COST = int(os.environ.get("RECIPE_COST", 1))
+IMAGE_COST = int(os.environ.get("IMAGE_COST", 4))
+
+origins = [o.strip() for o in os.environ.get(
+    "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+).split(",") if o.strip()]
 
 app = FastAPI(title="EatThis API")
+
+if HOSTED:
+    from auth.routes import router as auth_router
+
+    app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +59,15 @@ class MessageSchema(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "EatThis API is running"}
+
+
+@app.get("/config")
+async def config():
+    return {
+        "mode": APP_MODE,
+        "recipe_cost": RECIPE_COST,
+        "image_cost": IMAGE_COST,
+    }
 
 
 @app.post("/image/upload")
@@ -94,7 +117,8 @@ async def img_segment(image_file: UploadFile = File(...)):
 
 
 @app.post("/recipe/description")
-async def recipe_description(message_body: MessageSchema):
+async def recipe_description(message_body: MessageSchema, user=Depends(optional_user)):
+    charge_credits(user, RECIPE_COST)
     try:
         gpt_chat_result = await run_in_threadpool(gpt_chat, message_body.message)
     except OpenAIError as e:
@@ -104,7 +128,8 @@ async def recipe_description(message_body: MessageSchema):
 
 
 @app.post("/dalle/generate")
-async def dalle_generate(message_body: MessageSchema):
+async def dalle_generate(message_body: MessageSchema, user=Depends(optional_user)):
+    charge_credits(user, IMAGE_COST)
     try:
         dalle_result = await run_in_threadpool(dalle, message_body.message)
     except OpenAIError as e:

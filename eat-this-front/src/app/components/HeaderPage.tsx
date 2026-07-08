@@ -5,6 +5,7 @@ import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
 import { useTextContext} from "@/app/store/store";
 import Link from "next/link";
 import {Badge} from "@/app/components/utils/Badge/Badge";
+import AuthBar from "@/app/components/AuthBar";
 
 
 export default function HeaderPage({children}: Readonly<{
@@ -33,6 +34,7 @@ export default function HeaderPage({children}: Readonly<{
                            </div>
                     </Link>
                     <TextPrompt text={headerText}/>
+                    <AuthBar/>
                 </div>
             </div>
             {
