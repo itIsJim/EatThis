@@ -15,9 +15,9 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
     const masks = segData?.masks || [];
     const width = segData?.width || 0;
     const height = segData?.height || 0;
-    // Sizes are in viewBox units — scaled generously so labels stay legible
-    // when a ~1024px-wide viewBox is squeezed onto a phone screen.
-    const fontSize = Math.max(20, Math.round((width || 480) * 0.045));
+    // Sizes are in viewBox units — scaled so labels stay legible when a
+    // ~1024px-wide viewBox is squeezed onto a phone screen.
+    const fontSize = Math.max(16, Math.round((width || 480) * 0.032));
 
     useEffect(() => {
         if (!masks.length || !svgRef.current) return;
@@ -82,7 +82,7 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                     className="pointer-events-none absolute inset-0 h-full w-full select-none"
                 >
                     {masks.map((mask, i) => {
-                        const strokeW = Math.max(3, width * 0.006);
+                        const strokeW = Math.max(1.5, width * 0.0028);
                         return (
                             <g key={i}>
                                 <path
@@ -97,7 +97,7 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                                     d={toPath(mask.polygon)}
                                     fill="none"
                                     stroke="#000000"
-                                    strokeWidth={strokeW * 2}
+                                    strokeWidth={strokeW * 1.8}
                                     strokeLinejoin="round"
                                     opacity="0"
                                 />
@@ -106,7 +106,7 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                                     d={toPath(mask.polygon)}
                                     fill="none"
                                     stroke="#ffffff"
-                                    strokeWidth={strokeW}
+                                    strokeWidth={strokeW * 0.9}
                                     strokeLinejoin="round"
                                     opacity="0"
                                 />
@@ -115,24 +115,32 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                     })}
                     {masks.map((mask, i) => {
                         const [cx, cy] = centroid(mask.polygon);
+                        const label = mask.label.toUpperCase();
+                        // Estimated tag width: uppercase Jost with tracking ≈ 0.72em per char
+                        const tagW = label.length * fontSize * 0.72 + fontSize;
+                        const tagH = fontSize * 1.6;
                         return (
-                            <text
-                                key={`label-${i}`}
-                                className="mask-label"
-                                x={cx}
-                                y={cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fontSize={fontSize}
-                                fontWeight="700"
-                                fill="#ffffff"
-                                stroke="rgba(0,0,0,0.75)"
-                                strokeWidth={fontSize * 0.18}
-                                paintOrder="stroke"
-                                opacity="0"
-                            >
-                                {mask.label}
-                            </text>
+                            <g key={`label-${i}`} className="mask-label" opacity="0">
+                                <rect
+                                    x={cx - tagW / 2}
+                                    y={cy - tagH / 2}
+                                    width={tagW}
+                                    height={tagH}
+                                    fill="#000000"
+                                />
+                                <text
+                                    x={cx}
+                                    y={cy}
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize={fontSize}
+                                    fontWeight="700"
+                                    letterSpacing="0.12em"
+                                    fill="#ffffff"
+                                >
+                                    {label}
+                                </text>
+                            </g>
                         );
                     })}
                 </svg>
