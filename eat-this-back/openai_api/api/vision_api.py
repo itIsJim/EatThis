@@ -1,54 +1,38 @@
 import base64
-
-
-from dotenv import load_dotenv
 import os
-import requests
-from openai import OpenAI, OpenAIError
 
-client = OpenAI()
-load_dotenv()
+from openai_api.client import VISION_MODEL, get_client
+
+# "low" = fixed ~2.8K image tokens (~90% cheaper); set to "high" if small
+# ingredients get missed.
+VISION_DETAIL = os.environ.get("OPENAI_VISION_DETAIL", "low")
+
+PROMPT = (
+    "List the distinct objects clearly visible in this image as a "
+    "comma-separated list, e.g. 'dog, tree, car'. Nothing else."
+)
 
 
-def vision(img):
-    base64_image = base64.b64encode(img).decode('utf-8')
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
+def vision(img: bytes, mime_type: str = "image/jpeg") -> str:
+    base64_image = base64.b64encode(img).decode("utf-8")
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {openai_api_key}"
-    }
-
-    payload = {
-        "model": "gpt-4-vision-preview",
-        "messages": [
+    response = get_client().chat.completions.create(
+        model=VISION_MODEL,
+        messages=[
             {
                 "role": "user",
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "Analyze the content of the uploaded image carefully. Identify all distinct objects present in the image. Return a list of these objects in a simple, concise format, separated by commas. For example, if you recognize a dog, a tree, and a car in the image, your response should be formatted as 'dog, tree, car'. Please ensure the list is comprehensive and only includes items clearly visible in the image."
-                    },
+                    {"type": "text", "text": PROMPT},
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
-                        }
-                    }
-                ]
+                            "url": f"data:{mime_type};base64,{base64_image}",
+                            "detail": VISION_DETAIL,
+                        },
+                    },
+                ],
             }
         ],
-        "max_tokens": 300
-    }
-    try:
-        print("Running GPT Vision...")
-
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-
-        print(response.json())
-
-        return response.json()
-    except OpenAIError as e:
-        print(e)
-
-    print("Vision Done!")
+        max_tokens=150,
+    )
+    return response.choices[0].message.content

@@ -1,0 +1,13 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+openai>=1.55
+python-dotenv>=1.0
+python-multipart>=0.0.12
+
+# SAM 3 segmentation (heavy: torch + ~3.5GB model downloaded on first use)
+torch>=2.4
+transformers>=4.57
+pillow>=10.0
+numpy>=1.26
+opencv-python-headless>=4.9
+torchvision>=0.19

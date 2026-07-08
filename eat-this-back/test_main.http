@@ -5,7 +5,16 @@ Accept: application/json
 
 ###
 
-GET http://127.0.0.1:8000/hello/User
-Accept: application/json
+POST http://127.0.0.1:8000/recipe/description
+Content-Type: application/json
+
+{"message": "apple, carrot, chicken"}
+
+###
+
+POST http://127.0.0.1:8000/dalle/generate
+Content-Type: application/json
+
+{"message": "A roasted chicken dish with apple and carrot garnish"}
 
 ###

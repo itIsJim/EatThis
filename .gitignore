@@ -1,0 +1,18 @@
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+openai-env/
+eat-this-back/.env
+
+# Node
+node_modules/
+.next/
+eat-this-front/.env*.local

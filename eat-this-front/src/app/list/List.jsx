@@ -7,8 +7,12 @@ import {useTextContext} from "@/app/store/store";
 
 const List = () => {
     const {updateTextPromptContext, setIsNewItemSaved} = useTextContext();
-    const [list, setList] = useState(JSON.parse(localStorage.getItem('List'))? JSON.parse(localStorage.getItem('List')) : []);
+    const [list, setList] = useState([]);
     useEffect(() => {
+        const savedList = JSON.parse(localStorage.getItem('List'));
+        if (savedList) {
+            setList(savedList);
+        }
         updateTextPromptContext("Eat these")
         setIsNewItemSaved(false)
     }, []);
@@ -16,8 +20,8 @@ const List = () => {
         <section className="container">
             {list && list.map((item, index) => {
                 return (
-                    item.description && item.image && <div key={index} className="flex items-center justify-between p-4 mb-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                        <div className="flex items-center">
+                    item.description && item.image && <div key={index} className="p-3 sm:p-4 mb-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                        <div className="flex flex-col md:flex-row items-center gap-3 w-full">
                             <ImagePrompt url={item.image}/>
                             <TextPrompt text={item.description} />
                         </div>
