@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useMemo, useRef} from "react";
 import gsap from "gsap";
 
 const toPath = (polygon) =>
@@ -15,74 +15,108 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
     const masks = segData?.masks || [];
     const width = segData?.width || 0;
     const height = segData?.height || 0;
-    // Sizes are in viewBox units — scaled so labels stay legible when a
-    // ~1024px-wide viewBox is squeezed onto a phone screen.
+    // viewBox units; the canvas is wider than the image, so keep labels readable
     const fontSize = Math.max(16, Math.round((width || 480) * 0.032));
 
+    // Place each label in the left or right gutter (whichever side its item
+    // is on), stacked to avoid overlaps, with a leader line to the item.
+    const layout = useMemo(() => {
+        if (!masks.length) return {items: [], gutter: 0};
+        const maxChars = Math.max(...masks.map(m => m.label.length));
+        const gutter = Math.min(width * 0.55, maxChars * fontSize * 0.62 + fontSize * 2);
+        const left = [];
+        const right = [];
+        masks.forEach((mask) => {
+            const [cx, cy] = centroid(mask.polygon);
+            (cx < width / 2 ? left : right).push({...mask, cx, cy});
+        });
+        const minGap = fontSize * 1.9;
+        const place = (arr) => {
+            arr.sort((a, b) => a.cy - b.cy);
+            let prev = -Infinity;
+            arr.forEach(item => {
+                item.ly = Math.max(item.cy, prev + minGap, fontSize);
+                prev = item.ly;
+            });
+            const overflow = prev - (height - fontSize * 0.6);
+            if (overflow > 0) arr.forEach(item => { item.ly -= overflow; });
+        };
+        place(left);
+        place(right);
+        return {
+            items: [
+                ...left.map(m => ({...m, side: 'left'})),
+                ...right.map(m => ({...m, side: 'right'})),
+            ],
+            gutter,
+        };
+    }, [segData, fontSize]);
+
+    const {items, gutter} = layout;
+    const gutterPct = width ? (gutter / (width + 2 * gutter)) * 100 : 0;
+
     useEffect(() => {
-        if (!masks.length || !svgRef.current) return;
+        if (!items.length || !svgRef.current) return;
         const ctx = gsap.context(() => {
-            const outlines = gsap.utils.toArray('.mask-outline');
-            outlines.forEach((path) => {
-                const len = path.getTotalLength();
-                gsap.set(path, {strokeDasharray: len, strokeDashoffset: len, opacity: 1});
+            const drawn = gsap.utils.toArray('.mask-outline, .mask-leader');
+            drawn.forEach((el) => {
+                const len = el.getTotalLength();
+                gsap.set(el, {strokeDasharray: len, strokeDashoffset: len, opacity: 1});
             });
 
-            const tl = gsap.timeline({defaults: {ease: 'power2.inOut'}});
-            tl.to(outlines, {
-                strokeDashoffset: 0,
-                duration: 1.3,
-                stagger: 0.2,
-            });
-            tl.to('.mask-fill', {
-                opacity: 0.12,
-                duration: 0.6,
-                stagger: 0.2,
-            }, 0.5);
+            const tl = gsap.timeline({defaults: {ease: 'power2.out'}});
+            tl.to('.mask-outline', {strokeDashoffset: 0, duration: 0.6, stagger: 0.06});
+            tl.to('.mask-fill', {opacity: 0.12, duration: 0.25, stagger: 0.06}, 0.15);
+            tl.to('.mask-leader', {strokeDashoffset: 0, duration: 0.35, stagger: 0.05}, 0.35);
             tl.fromTo('.mask-label', {
                 opacity: 0,
-                scale: 0.4,
+                scale: 0.6,
                 transformOrigin: 'center center',
             }, {
                 opacity: 1,
                 scale: 1,
-                duration: 0.5,
-                ease: 'back.out(2.2)',
-                stagger: 0.2,
-            }, 0.9);
-            tl.to(outlines, {
-                opacity: 0.75,
-                duration: 0.8,
-                ease: 'sine.inOut',
-            }, '>0.3');
+                duration: 0.3,
+                ease: 'back.out(2)',
+                stagger: 0.05,
+            }, 0.45);
+            tl.to('.mask-outline', {opacity: 0.75, duration: 0.4, ease: 'sine.inOut'}, '>0.1');
         }, svgRef);
         return () => ctx.revert();
-    }, [segData]);
+    }, [items]);
 
     if (!previewUrl) return null;
 
     return (
-        <div className="relative mx-auto w-full max-w-xl">
-            <img
-                src={previewUrl}
-                alt="Your ingredients"
-                className={`w-full h-auto rounded-xl border border-gray-300 dark:border-neutral-700 ${isSegmenting ? 'animate-pulse' : ''}`}
-            />
-            {isSegmenting && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30">
-                    <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-800">
-                        🔍 Detecting ingredients ...
-                    </span>
-                </div>
-            )}
-            {masks.length > 0 && (
+        <div className="relative mx-auto w-full max-w-3xl">
+            <div
+                className="relative"
+                style={items.length ? {marginLeft: `${gutterPct}%`, marginRight: `${gutterPct}%`} : undefined}
+            >
+                <img
+                    src={previewUrl}
+                    alt="Your ingredients"
+                    className={`h-auto w-full border-2 border-black dark:border-white ${isSegmenting ? 'animate-pulse' : ''}`}
+                />
+                {isSegmenting && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <span className="border-2 border-black bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-black">
+                            Detecting ingredients ...
+                        </span>
+                    </div>
+                )}
+            </div>
+            {items.length > 0 && (
                 <svg
                     ref={svgRef}
-                    viewBox={`0 0 ${width} ${height}`}
+                    viewBox={`${-gutter} 0 ${width + 2 * gutter} ${height}`}
                     className="pointer-events-none absolute inset-0 h-full w-full select-none"
                 >
-                    {masks.map((mask, i) => {
+                    {items.map((mask, i) => {
                         const strokeW = Math.max(1.5, width * 0.0028);
+                        const isLeft = mask.side === 'left';
+                        const textX = isLeft ? -fontSize * 0.6 : width + fontSize * 0.6;
+                        const lineStartX = isLeft ? -fontSize * 0.35 : width + fontSize * 0.35;
+                        const markerSize = fontSize * 0.32;
                         return (
                             <g key={i}>
                                 <path
@@ -91,7 +125,6 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                                     fill="#ffffff"
                                     opacity="0"
                                 />
-                                {/* black under-stroke + white line: monochrome, legible on any photo */}
                                 <path
                                     className="mask-outline"
                                     d={toPath(mask.polygon)}
@@ -110,36 +143,46 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                                     strokeLinejoin="round"
                                     opacity="0"
                                 />
-                            </g>
-                        );
-                    })}
-                    {masks.map((mask, i) => {
-                        const [cx, cy] = centroid(mask.polygon);
-                        const label = mask.label.toUpperCase();
-                        // Estimated tag width: uppercase Jost with tracking ≈ 0.72em per char
-                        const tagW = label.length * fontSize * 0.72 + fontSize;
-                        const tagH = fontSize * 1.6;
-                        return (
-                            <g key={`label-${i}`} className="mask-label" opacity="0">
-                                <rect
-                                    x={cx - tagW / 2}
-                                    y={cy - tagH / 2}
-                                    width={tagW}
-                                    height={tagH}
-                                    fill="#000000"
+                                {/* leader line: background casing + foreground line */}
+                                <line
+                                    className="mask-leader"
+                                    x1={lineStartX} y1={mask.ly}
+                                    x2={mask.cx} y2={mask.cy}
+                                    style={{stroke: 'var(--background)'}}
+                                    strokeWidth={strokeW * 2.2}
+                                    opacity="0"
                                 />
-                                <text
-                                    x={cx}
-                                    y={cy}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    fontSize={fontSize}
-                                    fontWeight="700"
-                                    letterSpacing="0.12em"
-                                    fill="#ffffff"
-                                >
-                                    {label}
-                                </text>
+                                <line
+                                    className="mask-leader"
+                                    x1={lineStartX} y1={mask.ly}
+                                    x2={mask.cx} y2={mask.cy}
+                                    style={{stroke: 'var(--foreground)'}}
+                                    strokeWidth={strokeW * 0.9}
+                                    opacity="0"
+                                />
+                                <g className="mask-label" opacity="0">
+                                    {/* Bauhaus square marker on the item */}
+                                    <rect
+                                        x={mask.cx - markerSize / 2}
+                                        y={mask.cy - markerSize / 2}
+                                        width={markerSize}
+                                        height={markerSize}
+                                        style={{fill: 'var(--foreground)', stroke: 'var(--background)'}}
+                                        strokeWidth={strokeW * 0.5}
+                                    />
+                                    <text
+                                        x={textX}
+                                        y={mask.ly}
+                                        textAnchor={isLeft ? 'end' : 'start'}
+                                        dominantBaseline="central"
+                                        fontSize={fontSize}
+                                        fontWeight="700"
+                                        letterSpacing="0.1em"
+                                        style={{fill: 'var(--foreground)'}}
+                                    >
+                                        {mask.label.toUpperCase()}
+                                    </text>
+                                </g>
                             </g>
                         );
                     })}
