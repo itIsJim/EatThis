@@ -43,7 +43,7 @@ Segmentation uses Meta's **SAM 3** (`facebook/sam3`), a promptable concept-segme
 
 ### 4. Preview rendering
 
-The client renders the photograph with an SVG overlay in the image's coordinate space (viewBox = processed dimensions), guaranteeing mask registration at any display size. A GSAP timeline animates each mask: staggered stroke-dashoffset line drawing of the outline, a translucent categorical-color fill, and the ingredient label placed at the polygon centroid. The user reviews detected ingredients before committing to generation.
+The client renders the photograph with an SVG overlay whose viewBox extends beyond the image into lateral gutters, guaranteeing mask registration at any display size. A GSAP timeline (~1.5 s total) animates, per mask with short staggers: a monochrome double-stroke outline drawn via stroke-dashoffset, a subtle fill, a leader line from the item to its label, and the ingredient name — set in the application typeface, placed as a callout in the gutter nearest the item and connected by the leader line to a square marker at the mask centroid. Label positions are collision-resolved vertically per side. The user reviews detected ingredients before committing to generation.
 
 ### 5. Generation
 

@@ -8,8 +8,8 @@ See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model archi
 
 | Directory | Stack | Role |
 |---|---|---|
-| `eat-this-back` | Python, FastAPI, PyTorch | API server: OpenAI integration, SAM 3 segmentation |
-| `eat-this-front` | Next.js 14, React 18, Tailwind CSS, GSAP | Web client |
+| `eat-this-back` | Python, FastAPI, PyTorch | API server: OpenAI integration, SAM 3 segmentation, Supabase-backed auth/credits (hosted mode) |
+| `eat-this-front` | Next.js 14, React 18, Tailwind CSS 4, shadcn/ui, GSAP | Web client: upload/camera capture, animated segmentation preview, light/dark theme |
 
 ## Requirements
 
