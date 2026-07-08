@@ -2,8 +2,6 @@
 import React, {useEffect, useRef} from "react";
 import gsap from "gsap";
 
-const PALETTE = ['#34d399', '#f472b6', '#60a5fa', '#fbbf24', '#a78bfa', '#f87171', '#2dd4bf', '#fb923c', '#c084fc', '#4ade80'];
-
 const toPath = (polygon) =>
     `M ${polygon.map(([x, y]) => `${x} ${y}`).join(' L ')} Z`;
 
@@ -37,7 +35,7 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                 stagger: 0.2,
             });
             tl.to('.mask-fill', {
-                opacity: 0.16,
+                opacity: 0.12,
                 duration: 0.6,
                 stagger: 0.2,
             }, 0.5);
@@ -84,21 +82,31 @@ const SegmentPreview = ({previewUrl, segData, isSegmenting}) => {
                     className="pointer-events-none absolute inset-0 h-full w-full select-none"
                 >
                     {masks.map((mask, i) => {
-                        const color = PALETTE[i % PALETTE.length];
+                        const strokeW = Math.max(3, width * 0.006);
                         return (
                             <g key={i}>
                                 <path
                                     className="mask-fill"
                                     d={toPath(mask.polygon)}
-                                    fill={color}
+                                    fill="#ffffff"
+                                    opacity="0"
+                                />
+                                {/* black under-stroke + white line: monochrome, legible on any photo */}
+                                <path
+                                    className="mask-outline"
+                                    d={toPath(mask.polygon)}
+                                    fill="none"
+                                    stroke="#000000"
+                                    strokeWidth={strokeW * 2}
+                                    strokeLinejoin="round"
                                     opacity="0"
                                 />
                                 <path
                                     className="mask-outline"
                                     d={toPath(mask.polygon)}
                                     fill="none"
-                                    stroke={color}
-                                    strokeWidth={Math.max(3, width * 0.006)}
+                                    stroke="#ffffff"
+                                    strokeWidth={strokeW}
                                     strokeLinejoin="round"
                                     opacity="0"
                                 />

@@ -18,18 +18,21 @@ export default function HeaderPage({children}: Readonly<{
     }, [headerText]);
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 lg:p-24">
-            <div className="z-10 max-w-5xl w-full font-mono text-sm">
-                <div className="flex flex-row items-center w-full justify-center gap-2">
+        <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 lg:p-16">
+            <div className="z-10 max-w-5xl w-full">
+                <div className="flex flex-row items-center w-full justify-center gap-3">
                     <Link
                         className={"flex items-center justify-center shrink-0"}
                         href="/"
                         target="_self"
                         rel="noopener noreferrer"
+                        aria-label="Home"
                     >
-                           <div className="hover:cursor-pointer p-2 text-xl">
+                           <div className="hover:cursor-pointer">
                                <Badge dot={isNewItemSaved}>
-                                   <span>🏠</span>
+                                   <span className="flex h-10 w-10 items-center justify-center border-2 border-black bg-black text-lg font-bold text-white transition-colors hover:bg-white hover:text-black dark:border-white dark:bg-white dark:text-black dark:hover:bg-black dark:hover:text-white">
+                                       ET
+                                   </span>
                                </Badge>
                            </div>
                     </Link>
@@ -38,7 +41,7 @@ export default function HeaderPage({children}: Readonly<{
                 </div>
             </div>
             {
-                <div className="mt-4 sm:mt-6 h-auto w-full max-w-5xl rounded-lg border px-3 py-4 sm:px-5 transition-all duration-300 ease-in-out border-gray-500 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/30 ">
+                <div className="mt-4 sm:mt-6 h-auto w-full max-w-5xl border-2 border-black bg-white px-3 py-4 sm:px-5 dark:border-white dark:bg-black">
                     {children}
                 </div>
             }

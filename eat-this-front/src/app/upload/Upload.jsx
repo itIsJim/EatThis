@@ -7,6 +7,7 @@ import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
 import {useTextContext} from "@/app/store/store";
 import ImagePrompt from "@/app/components/utils/ImagePrompt/ImagePrompt";
 import SegmentPreview from "@/app/components/utils/SegmentPreview/SegmentPreview";
+import {Button} from "@/components/ui/button";
 
 
 
@@ -302,10 +303,8 @@ const Upload = (props) => {
                 <div className="mb-3 flex w-full justify-center">
                     {
                         !isSaved?
-                            <button className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-lg hover:cursor-pointer hover:border-gray-500 dark:border-neutral-700 dark:bg-neutral-800/30" onClick={handleSaveListItem}>
-                                📥 Save to list
-                            </button>
-                            :<span className="px-4 py-2 text-lg">✅ Saved</span>
+                            <Button variant="outline" onClick={handleSaveListItem}>Save to list</Button>
+                            :<span className="border-2 border-black bg-black px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white dark:border-white dark:bg-white dark:text-black">Saved</span>
                     }
                 </div>
             }
@@ -320,9 +319,9 @@ const Upload = (props) => {
             {
                 files?.length > 0?
                     <div className="mt-5 flex justify-center items-center">
-                        <button disabled={isLoading || isSegmenting} onClick={handleProcess} className="group rounded-full border border-transparent px-5 py-2 transition-all duration-300 ease-in-out border-gray-300 bg-gray-100 disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800/30 hover:border-gray-500 hover:bg-gradient-to-r from-gray-100 to-gray-200 dark:border-neutral-700 dark:from-neutral-800/30 dark:to-neutral-800/40 active:bg-gray-300 active:dark:bg-gray-600">
-                            {isSegmenting ? "Analyzing ..." : "Make recipe 🍳"}
-                        </button>
+                        <Button variant="outline" disabled={isLoading || isSegmenting} onClick={handleProcess}>
+                            {isSegmenting ? "Analyzing ..." : "Make recipe"}
+                        </Button>
                     </div>
                     :<></>
             }
@@ -336,22 +335,18 @@ const Upload = (props) => {
                     />
                 </div>
             }
-            <div style={dropzone} {...getRootProps({className: 'dropzone'})}>
+            <div style={dropzone} {...getRootProps({className: 'mt-2 cursor-pointer border-2 border-dashed border-black p-6 transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black'})}>
                 <input {...getInputProps()} />
-                <div className=" align-middle flex flex-row self-center transition-transform duration-300 ease-in-out transform hover:scale-110">
-                    <p className="transition-transform duration-300 ease-in-out transform hover:scale-110 cursor-pointer active:scale-90">
-                        <PlusCircleOutlined  style={{
-                            verticalAlign: 'middle',
-                        }}/>&nbsp; {files?.length > 0?"Click again to change image":"Drag and drop some files here, or click to select files"}
-                    </p>
-                </div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em]">
+                    <PlusCircleOutlined style={{verticalAlign: 'middle'}}/>&nbsp; {files?.length > 0?"Change image":"Drop an image or click to select"}
+                </p>
             </div>
             {
                 !isCameraOpen?
                     <div className="mt-4 flex justify-center items-center">
-                        <button onClick={openCamera} className="group rounded-full border border-transparent px-5 py-2 transition-all duration-300 ease-in-out border-gray-300 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/30 hover:border-gray-500 hover:bg-gradient-to-r from-gray-100 to-gray-200 dark:border-neutral-700 dark:from-neutral-800/30 dark:to-neutral-800/40 active:bg-gray-300 active:dark:bg-gray-600">
-                            <CameraOutlined style={{verticalAlign: 'middle'}}/>&nbsp;Take a photo
-                        </button>
+                        <Button variant="outline" onClick={openCamera}>
+                            <CameraOutlined style={{verticalAlign: 'middle'}}/>&nbsp;Use camera
+                        </Button>
                     </div>
                     :
                     <div className="mt-4 flex flex-col items-center gap-3">
@@ -360,16 +355,12 @@ const Upload = (props) => {
                             autoPlay
                             playsInline
                             muted
-                            className="w-full max-w-md rounded-xl border border-gray-300 dark:border-neutral-700"
+                            className="w-full max-w-md border-2 border-black dark:border-white"
                             style={{maxHeight: 360, objectFit: 'cover'}}
                         />
                         <div className="flex flex-row gap-3">
-                            <button onClick={capturePhoto} className="group rounded-full border px-5 py-2 transition-all duration-300 ease-in-out border-gray-300 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/30 hover:border-gray-500 active:bg-gray-300 active:dark:bg-gray-600">
-                                <CameraOutlined style={{verticalAlign: 'middle'}}/>&nbsp;Capture
-                            </button>
-                            <button onClick={closeCamera} className="group rounded-full border px-5 py-2 transition-all duration-300 ease-in-out border-gray-300 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800/30 hover:border-gray-500 active:bg-gray-300 active:dark:bg-gray-600">
-                                Cancel
-                            </button>
+                            <Button variant="outline" onClick={capturePhoto}>Capture</Button>
+                            <Button variant="outline" onClick={closeCamera}>Cancel</Button>
                         </div>
                     </div>
             }

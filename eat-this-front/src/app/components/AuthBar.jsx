@@ -2,9 +2,9 @@
 import React, {useEffect, useState} from "react";
 import {supabase} from "@/lib/supabase";
 import {getConfig, getMe} from "@/lib/api";
-
-const inputCls = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900";
-const btnCls = "rounded-full border border-gray-300 bg-gray-100 px-4 py-1.5 text-sm hover:border-gray-500 dark:border-neutral-700 dark:bg-neutral-800/30";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
 
 const AuthBar = () => {
     const [hosted, setHosted] = useState(false);
@@ -54,22 +54,22 @@ const AuthBar = () => {
     if (session) {
         return (
             <div className="flex items-center gap-2 text-xs sm:text-sm">
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-neutral-700">
-                    ⚡ {credits ?? '…'} credits
-                </span>
-                <button className={btnCls} onClick={() => supabase.auth.signOut()}>Sign out</button>
+                <Badge variant="outline" className="border-2 border-foreground px-3 py-1.5 text-xs font-bold uppercase tracking-[0.15em]">
+                    {credits ?? '…'} cr
+                </Badge>
+                <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>Sign out</Button>
             </div>
         );
     }
 
     return (
         <div className="relative">
-            <button className={btnCls} onClick={() => setFormOpen(!formOpen)}>Sign in</button>
+            <Button variant="outline" size="sm" onClick={() => setFormOpen(!formOpen)}>Sign in</Button>
             {formOpen && (
-                <form onSubmit={submit} className="absolute right-0 top-10 z-30 flex w-64 flex-col gap-2 rounded-xl border border-gray-300 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-                    <input className={inputCls} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required/>
-                    <input className={inputCls} type="password" placeholder="Password (8+ chars)" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}/>
-                    <button type="submit" className={btnCls}>{isSignUp ? "Create account" : "Sign in"}</button>
+                <form onSubmit={submit} className="absolute right-0 top-12 z-30 flex w-64 flex-col gap-2 border-2 border-foreground bg-background p-4">
+                    <Input type="email" placeholder="EMAIL" value={email} onChange={e => setEmail(e.target.value)} required/>
+                    <Input type="password" placeholder="PASSWORD (8+ CHARS)" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}/>
+                    <Button type="submit" variant="outline" size="sm">{isSignUp ? "Create account" : "Sign in"}</Button>
                     <button type="button" className="text-xs underline opacity-70" onClick={() => setIsSignUp(!isSignUp)}>
                         {isSignUp ? "Have an account? Sign in" : "New here? Create an account"}
                     </button>

@@ -5,13 +5,13 @@ import Image from "next/image";
 const ImagePrompt = ({obj, url}) => {
     return (
         <div>
-            <div className="flex w-full justify-center rounded-xl border border-gray-300 bg-gray-200 p-2 sm:p-4 dark:border-neutral-800 dark:bg-zinc-800/30">
+            <div className="flex w-full justify-center border-2 border-black bg-white p-2 sm:p-3 dark:border-white dark:bg-black">
                 <Image
                     src={url}
                     height={800}
                     width={800}
-                    alt={"DALLE generated image"}
-                    className="h-auto w-full max-w-md rounded-lg"
+                    alt={"Generated dish"}
+                    className="h-auto w-full max-w-md"
                 />
             </div>
             <style jsx>{`

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Jost } from "next/font/google";
 import "./globals.css";
 import React from "react";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"] });
+const jost = Jost({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "EatThis",
@@ -16,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className={cn("font-sans", jost.variable)}>
+      <body className={jost.className}>{children}</body>
     </html>
   );
 }

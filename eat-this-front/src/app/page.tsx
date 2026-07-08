@@ -1,74 +1,63 @@
 'use client'
 import Link from "next/link";
-import React, { useEffect, useState} from 'react';
-import {Badge} from "@/app/components/utils/Badge/Badge";
+import React, { useState } from 'react';
 import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
 
 export default function Home() {
-  const [headerText, setHeaderText] = useState("Welcome to Eat This!");
-  const handleHeaderText = (strValue:string) => {
+  const [headerText, setHeaderText] = useState("Welcome to Eat This");
+  const handleHeaderText = (strValue: string) => {
     setHeaderText(strValue);
   };
 
   return (
-          <main className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-8 lg:p-24">
-            <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-              <div className="flex flex-row w-full justify-center lg:w-auto">
-                <TextPrompt text={headerText}/>
-              </div>
-            </div>
+    <main className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-8 lg:p-16">
+      <div className="w-full max-w-4xl">
+        <TextPrompt text={headerText}/>
+      </div>
 
-            {
-              <div className="my-8">
-                  <h1 className="mb-4 text-4xl sm:text-5xl font-bold text-center text-gray-900 dark:text-gray-100">
-                      Eat This
-                  </h1>
-                  <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
-                      Your personal recipe generator
-                  </p>
-              </div>
-            }
+      <div className="my-10 flex flex-col items-center">
+        {/* Bauhaus form triad */}
+        <div className="mb-8 flex items-center gap-5" aria-hidden="true">
+          <span className="h-8 w-8 rounded-full bg-black dark:bg-white"/>
+          <span className="h-8 w-8 bg-black dark:bg-white"/>
+          <span className="h-0 w-0 border-b-[32px] border-l-[18px] border-r-[18px] border-b-black border-l-transparent border-r-transparent dark:border-b-white"/>
+        </div>
+        <h1 className="text-center text-6xl font-bold uppercase leading-none tracking-tight sm:text-8xl">
+          Eat<br/>This
+        </h1>
+        <p className="mt-6 text-center text-xs uppercase tracking-[0.4em] opacity-60">
+          Photo · Ingredients · Recipe
+        </p>
+      </div>
 
-            <div className="mb-8 flex w-full max-w-5xl flex-col gap-4 text-center sm:flex-row sm:justify-around lg:mb-0 lg:text-left">
-              <Link
-                  onMouseOver={() => handleHeaderText("Upload a image now")}
-                  onMouseLeave={()=> handleHeaderText("Welcome to Eat This!")}
-                href="/upload"
-                className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                target="_self"
-                rel="noopener noreferrer"
-              >
-                <h2 className={`mb-3 text-2xl font-semibold`}>
-                  Upload{" "}
-                  <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                    -&gt;
-                  </span>
-                </h2>
-                <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                  Upload a picture of your food and get a list of ingredients
-                </p>
-              </Link>
-                <Link
-                    onMouseOver={() => handleHeaderText("Check recipe list")}
-                    onMouseLeave={()=> handleHeaderText("Welcome to Eat This!")}
-                  href="/list"
-                  className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                  target="_self"
-                  rel="noopener noreferrer"
-                >
-                  <h2 className={`mb-3 text-2xl font-semibold`}>
-                    List{" "}
-                    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                      -&gt;
-                    </span>
-                  </h2>
-                  <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                    See the recipes that you have made
-                  </p>
-                </Link>
-
-            </div>
-          </main>
+      <div className="mb-4 grid w-full max-w-4xl grid-cols-1 sm:grid-cols-2">
+        <Link
+          onMouseOver={() => handleHeaderText("Upload an image now")}
+          onMouseLeave={() => handleHeaderText("Welcome to Eat This")}
+          href="/upload"
+          className="group border-2 border-black p-6 transition-colors hover:bg-black hover:text-white sm:border-r-0 dark:border-white dark:hover:bg-white dark:hover:text-black"
+        >
+          <h2 className="mb-2 text-xl font-bold uppercase tracking-[0.15em]">
+            Upload <span className="inline-block transition-transform group-hover:translate-x-2 motion-reduce:transform-none">→</span>
+          </h2>
+          <p className="m-0 max-w-[36ch] text-sm opacity-60">
+            Photograph your ingredients and get a recipe
+          </p>
+        </Link>
+        <Link
+          onMouseOver={() => handleHeaderText("Check recipe list")}
+          onMouseLeave={() => handleHeaderText("Welcome to Eat This")}
+          href="/list"
+          className="group border-2 border-t-0 border-black p-6 transition-colors hover:bg-black hover:text-white sm:border-t-2 dark:border-white dark:hover:bg-white dark:hover:text-black"
+        >
+          <h2 className="mb-2 text-xl font-bold uppercase tracking-[0.15em]">
+            List <span className="inline-block transition-transform group-hover:translate-x-2 motion-reduce:transform-none">→</span>
+          </h2>
+          <p className="m-0 max-w-[36ch] text-sm opacity-60">
+            The recipes you have saved
+          </p>
+        </Link>
+      </div>
+    </main>
   );
 }
-
