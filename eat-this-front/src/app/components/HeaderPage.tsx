@@ -18,9 +18,9 @@ export default function HeaderPage({children}: Readonly<{
     }, [headerText]);
 
     return (
-        <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 lg:p-16">
-            <div className="z-10 max-w-5xl w-full">
-                <div className="flex flex-row items-center w-full justify-center gap-3">
+        <main className="flex min-h-screen flex-col items-center px-4 pb-4 sm:px-8 sm:pb-8 lg:px-16 lg:pb-16">
+            <div className="sticky top-0 z-20 flex w-full justify-center bg-background pb-3 pt-4 sm:pt-6">
+                <div className="flex w-full max-w-5xl flex-row items-center justify-center gap-3">
                     <Link
                         className={"flex items-center justify-center shrink-0"}
                         href="/"
