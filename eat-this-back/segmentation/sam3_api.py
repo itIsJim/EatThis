@@ -1,10 +1,13 @@
 import io
 import threading
+import time
 
 import cv2
 import numpy as np
 import torch
 from PIL import Image
+
+from telemetry import log_call, log_status
 
 MODEL_ID = "facebook/sam3"
 
@@ -23,8 +26,10 @@ def _load():
         if _model is None:
             from transformers import Sam3Model, Sam3Processor
 
+            t0 = time.perf_counter()
             _processor = Sam3Processor.from_pretrained(MODEL_ID)
             _model = Sam3Model.from_pretrained(MODEL_ID).to(_device()).eval()
+            log_status(f"loaded {MODEL_ID} on {_device()} in {time.perf_counter() - t0:.1f}s")
     return _model, _processor
 
 
@@ -56,6 +61,7 @@ def segment_image(content: bytes, labels: list[str], score_threshold: float = 0.
         image = image.resize((round(image.width * scale), round(image.height * scale)))
 
     device = next(model.parameters()).device
+    t0 = time.perf_counter()
     masks = []
     for label in labels:
         inputs = processor(images=image, text=label, return_tensors="pt").to(device)
@@ -76,4 +82,9 @@ def segment_image(content: bytes, labels: list[str], score_threshold: float = 0.
                     "polygon": polygon,
                 })
 
+    log_call(
+        "segment", "local", MODEL_ID, time.perf_counter() - t0,
+        device=str(device), labels=len(labels), masks=len(masks),
+        input=f"{image.width}x{image.height}",
+    )
     return {"width": image.width, "height": image.height, "masks": masks}
