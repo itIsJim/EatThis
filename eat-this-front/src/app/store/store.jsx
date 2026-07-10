@@ -31,8 +31,18 @@ export const GlobalProvider = ({ children }) => {
     };
 
     const updateNewListItem = (newValues) => {
-        const oldList = JSON.parse(localStorage.getItem('List'));
-        localStorage.setItem('List', JSON.stringify(oldList ? [newValues, ...oldList] : [newValues]));
+        try {
+            const oldList = JSON.parse(localStorage.getItem('List'));
+            localStorage.setItem('List', JSON.stringify(oldList ? [newValues, ...oldList] : [newValues]));
+        } catch (error) {
+            // Quota exceeded (base64 images are large): keep only the newest few
+            try {
+                const oldList = JSON.parse(localStorage.getItem('List')) || [];
+                localStorage.setItem('List', JSON.stringify([newValues, ...oldList.slice(0, 2)]));
+            } catch {
+                console.error("Could not save to list:", error);
+            }
+        }
         setIsNewItemSaved(true);
     }
 

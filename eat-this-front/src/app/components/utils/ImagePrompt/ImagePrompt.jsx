@@ -12,6 +12,7 @@ const ImagePrompt = ({obj, url}) => {
                     width={800}
                     alt={"Generated dish"}
                     className="h-auto w-full max-w-md"
+                    unoptimized={url?.startsWith('data:')}
                 />
             </div>
             <style jsx>{`
