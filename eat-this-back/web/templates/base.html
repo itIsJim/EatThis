@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EatThis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('theme');
+                var d = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', d);
+            } catch (e) {}
+        })();
+    </script>
+    <script src="/static/htmx.min.js" defer></script>
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="topbar">
+    <a class="logo" href="/" aria-label="Home">ET</a>
+    <div class="statusbar" id="status">
+        <span id="status-text">{% block status %}Welcome to Eat This{% endblock %}</span><span class="cursor">|</span>
+    </div>
+    <button class="bh-btn small" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle light/dark mode">●</button>
+</div>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<script>
+    var b = document.getElementById('theme-btn');
+    if (b && document.documentElement.classList.contains('dark')) b.textContent = '○';
+    document.body.addEventListener('htmx:responseError', function (e) {
+        var t = document.getElementById('status-text');
+        if (t) t.textContent = 'Request failed (' + e.detail.xhr.status + ') — check the backend logs.';
+    });
+    document.body.addEventListener('htmx:sendError', function () {
+        var t = document.getElementById('status-text');
+        if (t) t.textContent = "Can't reach the kitchen server. Is the backend running?";
+    });
+</script>
+</body>
+</html>

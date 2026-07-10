@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+    <div class="triad" aria-hidden="true">
+        <span class="circle"></span><span class="square"></span><span class="triangle"></span>
+    </div>
+    <h1>Eat<br>This</h1>
+    <p>Photo · Ingredients · Recipe</p>
+</div>
+<div class="landing-cards">
+    <a class="landing-card" href="/app">
+        <h2>Upload <span class="arrow">→</span></h2>
+        <p>Photograph your ingredients and get a recipe</p>
+    </a>
+    <a class="landing-card" href="/list">
+        <h2>List <span class="arrow">→</span></h2>
+        <p>The recipes you have saved</p>
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+<div class="card">
+    <p class="recipe-text" id="recipe-text"></p>
+    <textarea class="hidden" id="recipe-store" name="recipe" form="save-form">{{ recipe }}</textarea>
+</div>
+<input type="hidden" id="dish-store" name="brief" value="{{ image_brief }}">
+<script>typeRecipe()</script>
+
+<div id="dish-slot" hx-swap-oob="true">
+    <div class="stack" style="width:100%; margin-top:0"
+         hx-post="/ui/image" hx-include="#dish-store" hx-trigger="load" hx-swap="outerHTML">
+        <div class="render-loader" style="display:flex">
+            <div class="shapes"><span class="circle"></span><span class="square"></span><span class="triangle"></span></div>
+            <span class="caption">Rendering dish</span>
+        </div>
+    </div>
+</div>
+<span id="status-text" hx-swap-oob="true">{{ dish }} coming right up — drawing your dish <span class="dots"></span></span>
+<button class="bh-btn" id="action-btn" hx-swap-oob="true" disabled>Drawing your dish ...</button>

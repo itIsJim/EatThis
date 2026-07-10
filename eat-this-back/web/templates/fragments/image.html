@@ -1,0 +1,6 @@
+<div class="stack" style="width:100%; margin-top:0">
+    <img class="result-img" src="{{ image }}" alt="Generated dish">
+    <input type="hidden" id="image-store" name="image_token" value="{{ image_token }}" form="save-form">
+</div>
+<button class="bh-btn" id="action-btn" hx-swap-oob="true" type="submit" form="save-form">Save to list</button>
+<span id="status-text" hx-swap-oob="true">Voila! Here is your dish! Save it if you like it.</span>

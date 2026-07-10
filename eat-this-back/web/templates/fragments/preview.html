@@ -1,0 +1,72 @@
+<div id="dish-slot"></div>
+<div class="workspace">
+    <div class="ws-left">
+        <div class="preview" {% if overlay.gutter %}style="max-width: 56rem"{% endif %}>
+            <div {% if overlay.gutter %}style="margin: 0 {{ (overlay.gutter / (overlay.width + 2 * overlay.gutter) * 100) | round(2) }}%"{% endif %}>
+                <img src="{{ photo }}" alt="Your ingredients">
+            </div>
+            {% if overlay.outlines %}
+            <svg viewBox="{{ -overlay.gutter }} 0 {{ overlay.width + 2 * overlay.gutter }} {{ overlay.height }}">
+                {% for o in overlay.outlines %}
+                <path class="mask-fill" d="{{ o.path }}" fill="#fff" style="animation-delay: {{ o.delay_ms + 150 }}ms"/>
+                <path class="mask-outline" d="{{ o.path }}" fill="none" stroke="#000" stroke-linejoin="round"
+                      stroke-width="{{ overlay.stroke_w * 1.8 }}"
+                      stroke-dasharray="{{ o.length }}" stroke-dashoffset="{{ o.length }}"
+                      style="animation-delay: {{ o.delay_ms }}ms"/>
+                <path class="mask-outline" d="{{ o.path }}" fill="none" stroke="#fff" stroke-linejoin="round"
+                      stroke-width="{{ overlay.stroke_w * 0.9 }}"
+                      stroke-dasharray="{{ o.length }}" stroke-dashoffset="{{ o.length }}"
+                      style="animation-delay: {{ o.delay_ms }}ms"/>
+                {% endfor %}
+                {% for t in overlay.on_item %}
+                {% set tw = t.label | length * t.font_size * 0.62 + t.font_size * 0.9 %}
+                <g class="mask-label" style="animation-delay: {{ t.delay_ms }}ms">
+                    <rect x="{{ t.cx - tw / 2 }}" y="{{ t.cy - t.font_size * 0.75 }}"
+                          width="{{ tw }}" height="{{ t.font_size * 1.5 }}" fill="#000"/>
+                    <text x="{{ t.cx }}" y="{{ t.cy }}" text-anchor="middle" dominant-baseline="central"
+                          font-size="{{ t.font_size }}" font-weight="700" letter-spacing="0.1em" fill="#fff">
+                        {{ t.label | upper }}
+                    </text>
+                </g>
+                {% endfor %}
+                {% for c in overlay.callouts %}
+                {% set line_x = -overlay.font_size * 0.35 if c.side == 'left' else overlay.width + overlay.font_size * 0.35 %}
+                {% set text_x = -overlay.font_size * 0.6 if c.side == 'left' else overlay.width + overlay.font_size * 0.6 %}
+                {% set line_len = ((c.cx - line_x) ** 2 + (c.cy - c.ly) ** 2) ** 0.5 %}
+                <line class="mask-leader" x1="{{ line_x }}" y1="{{ c.ly }}" x2="{{ c.cx }}" y2="{{ c.cy }}"
+                      stroke="var(--bg)" stroke-width="{{ overlay.stroke_w * 2.2 }}"
+                      stroke-dasharray="{{ line_len | round(1) }}" stroke-dashoffset="{{ line_len | round(1) }}"
+                      style="animation-delay: {{ c.delay_ms }}ms"/>
+                <line class="mask-leader" x1="{{ line_x }}" y1="{{ c.ly }}" x2="{{ c.cx }}" y2="{{ c.cy }}"
+                      stroke="var(--fg)" stroke-width="{{ overlay.stroke_w * 0.9 }}"
+                      stroke-dasharray="{{ line_len | round(1) }}" stroke-dashoffset="{{ line_len | round(1) }}"
+                      style="animation-delay: {{ c.delay_ms }}ms"/>
+                <g class="mask-label" style="animation-delay: {{ c.delay_ms + 100 }}ms">
+                    <rect x="{{ c.cx - overlay.font_size * 0.16 }}" y="{{ c.cy - overlay.font_size * 0.16 }}"
+                          width="{{ overlay.font_size * 0.32 }}" height="{{ overlay.font_size * 0.32 }}"
+                          fill="var(--fg)" stroke="var(--bg)" stroke-width="{{ overlay.stroke_w * 0.5 }}"/>
+                    <text x="{{ text_x }}" y="{{ c.ly }}"
+                          text-anchor="{{ 'end' if c.side == 'left' else 'start' }}" dominant-baseline="central"
+                          font-size="{{ overlay.font_size }}" font-weight="700" letter-spacing="0.1em" fill="var(--fg)">
+                        {{ c.label | upper }}
+                    </text>
+                </g>
+                {% endfor %}
+            </svg>
+            {% endif %}
+        </div>
+        {% if ingredients %}
+        <input type="hidden" id="ingredients-store" name="ingredients" value="{{ ingredients }}">
+        {% endif %}
+    </div>
+    <div class="ws-right" id="results"></div>
+</div>
+<span id="status-text" hx-swap-oob="true">{{ status }}</span>
+{% if ingredients %}
+<button class="bh-btn" id="action-btn" hx-swap-oob="true"
+        hx-post="/ui/generate" hx-include="#ingredients-store"
+        hx-target="#results" hx-swap="innerHTML"
+        hx-on::before-request="document.getElementById('status-text').innerHTML = 'Cooking up your recipe <span class=dots></span>'">Make recipe</button>
+{% else %}
+<button class="bh-btn" id="action-btn" hx-swap-oob="true" onclick="openCamera()">Use camera</button>
+{% endif %}

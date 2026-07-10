@@ -74,8 +74,20 @@ class MessageSchema(BaseModel):
     message: str
 
 
-@app.get("/")
-async def root():
+from pathlib import Path
+
+from fastapi.staticfiles import StaticFiles
+
+from web import saves
+from web.routes import router as web_router
+
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "web" / "static"), name="static")
+app.include_router(web_router)
+saves.init_db()
+
+
+@app.get("/health")
+async def health():
     return {"message": "EatThis API is running"}
 
 

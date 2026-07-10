@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block status %}Upload an image to get started{% endblock %}
+{% block content %}
+<div class="bh-card">
+    <div class="stack">
+        <div id="uploader" class="stack" style="width:100%; margin-top:0">
+        <form id="photo-form"
+              hx-post="/ui/segment" hx-target="#stage" hx-swap="innerHTML"
+              hx-encoding="multipart/form-data"
+              hx-on::before-request="document.getElementById('status-text').innerHTML = 'Let me take a look at your ingredients <span class=dots></span>'"
+              style="width:100%">
+            <label class="dropzone" style="display:block">
+                ＋ Drop an image or click to select
+                <input class="hidden" id="photo-input" type="file" name="image_file" accept="image/*"
+                       onchange="showLocalPreview(this); this.form.requestSubmit()">
+            </label>
+        </form>
+
+        <div class="hidden stack" id="camera-panel">
+            <video class="camera" id="camera-video" autoplay playsinline muted></video>
+            <button class="bh-btn small" onclick="closeCamera()">Cancel</button>
+        </div>
+        </div>
+
+        <button class="bh-btn" id="action-btn" onclick="openCamera()">Use camera</button>
+        <form id="save-form" hx-post="/ui/save" hx-swap="none"
+              hx-on::before-request="document.getElementById('status-text').textContent = 'Saving ...'"></form>
+
+        <div id="stage" class="stack" style="width:100%"></div>
+    </div>
+</div>
+{% endblock %}

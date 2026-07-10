@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block status %}Eat these{% endblock %}
+{% block content %}
+<div class="bh-card">
+    {% if not saves %}
+        <p class="caption" style="text-align:center; padding:2rem 0">Nothing saved yet — make a recipe first</p>
+    {% endif %}
+    {% for item in saves %}
+        <div class="save-item" id="save-{{ item.id }}">
+            <img src="{{ item.image }}" alt="Saved dish">
+            <div style="flex:1">
+                <p class="recipe-text">{{ item.recipe }}</p>
+                <button class="bh-btn small" style="margin-top:1rem"
+                        hx-post="/ui/save/{{ item.id }}/delete"
+                        hx-target="#save-{{ item.id }}" hx-swap="outerHTML">
+                    Remove
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
