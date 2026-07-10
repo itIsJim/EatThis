@@ -57,6 +57,65 @@ RECIPE_SYSTEM = (
 )
 
 
+
+# Deterministic ingredient emoji: small models guess these badly, so we
+# overwrite whatever the model emitted using a keyword lexicon (longest
+# match wins: "sweet potato" -> 🍠 before "potato" -> 🥔).
+EMOJI_MAP = {
+    "tomato": "🍅", "egg": "🥚", "basil": "🌿", "herb": "🌿", "parsley": "🌿",
+    "cilantro": "🌿", "mint": "🌿", "rosemary": "🌿", "thyme": "🌿", "dill": "🌿",
+    "bread": "🍞", "toast": "🍞", "baguette": "🥖", "cheese": "🧀", "milk": "🥛",
+    "cream": "🥛", "yogurt": "🥛", "butter": "🧈", "salmon": "🐟", "fish": "🐟",
+    "tuna": "🐟", "shrimp": "🦐", "prawn": "🦐", "crab": "🦀", "lobster": "🦞",
+    "chicken": "🍗", "turkey": "🦃", "duck": "🍗", "beef": "🥩", "steak": "🥩",
+    "meat": "🥩", "pork": "🥓", "bacon": "🥓", "ham": "🍖", "lamb": "🍖",
+    "sausage": "🌭", "carrot": "🥕", "sweet potato": "🍠", "potato": "🥔",
+    "broccoli": "🥦", "cauliflower": "🥦", "lettuce": "🥬", "spinach": "🥬",
+    "kale": "🥬", "cabbage": "🥬", "bok choy": "🥬", "cucumber": "🥒",
+    "zucchini": "🥒", "bell pepper": "🫑", "chili": "🌶", "chile": "🌶",
+    "jalapeno": "🌶", "pepper": "🫑", "corn": "🌽", "mushroom": "🍄",
+    "onion": "🧅", "shallot": "🧅", "garlic": "🧄", "avocado": "🥑",
+    "lemon": "🍋", "lime": "🍋", "orange": "🍊", "apple": "🍎", "banana": "🍌",
+    "strawberr": "🍓", "blueberr": "🫐", "raspberr": "🍓", "cranberr": "🍒",
+    "grape": "🍇", "watermelon": "🍉", "melon": "🍈", "pineapple": "🍍",
+    "mango": "🥭", "peach": "🍑", "pear": "🍐", "cherr": "🍒", "coconut": "🥥",
+    "olive oil": "🫒", "olive": "🫒", "oil": "🫒", "rice": "🍚", "pasta": "🍝",
+    "noodle": "🍜", "spaghetti": "🍝", "honey": "🍯", "salt": "🧂",
+    "spice": "🧂", "seasoning": "🧂", "bean": "🫘", "chickpea": "🫘",
+    "lentil": "🫘", "peanut": "🥜", "almond": "🥜", "walnut": "🥜", "nut": "🥜",
+    "butternut": "🎃", "squash": "🎃", "pumpkin": "🎃", "juice": "🧃",
+    "eggplant": "🍆", "pea": "🫛",
+    "ginger": "🫚", "flour": "🌾", "oat": "🌾", "quinoa": "🌾",
+    "chocolate": "🍫", "wine": "🍷", "broth": "🍲", "stock": "🍲",
+    "water": "💧", "ice": "🧊",
+}
+_EMOJI_KEYS = sorted(EMOJI_MAP, key=len, reverse=True)
+
+
+def _fix_ingredient_emoji(lines: list[str]) -> list[str]:
+    import re
+
+    out, in_ingredients = [], False
+    for line in lines:
+        stripped = line.strip()
+        low = stripped.lower()
+        if low.startswith("ingredients"):
+            in_ingredients = True
+            out.append(line)
+            continue
+        if low.startswith("steps"):
+            in_ingredients = False
+            out.append(line)
+            continue
+        if in_ingredients and stripped:
+            core = re.sub(r"^[\W_]+", "", stripped).strip() or stripped
+            emoji = next((EMOJI_MAP[k] for k in _EMOJI_KEYS if k in low), "🍽")
+            out.append(f"{emoji} {core}")
+        else:
+            out.append(line)
+    return out
+
+
 def _normalize_recipe(text: str) -> str:
     import re
 
@@ -67,6 +126,7 @@ def _normalize_recipe(text: str) -> str:
     # If generation was cut off mid-sentence, drop the dangling fragment.
     while len(lines) > 3 and lines[-1].strip() and not re.search(r'[.!?:]$', lines[-1].strip()):
         lines.pop()
+    lines = _fix_ingredient_emoji(lines)
     return '\n'.join(lines).strip()
 
 
@@ -178,3 +238,33 @@ def dish_scope(ingredients: str) -> list[dict]:
         traits=len(traits),
     )
     return traits
+
+
+def visual_brief(recipe: str) -> str:
+    """One-sentence visual description of the finished dish, distilled from
+    the recipe steps — grounding for the image generation prompt."""
+    import re
+
+    pipe = _load()
+    messages = [
+        {"role": "system", "content": "You describe finished dishes for a food photographer."},
+        {
+            "role": "user",
+            "content": (
+                f"Recipe:\n{recipe}\n\n"
+                "In ONE sentence (max 30 words), describe exactly how the finished "
+                "plated dish looks — cooked state, colors, arrangement, garnish — "
+                "as implied by the steps. No instructions, only the visual. English only."
+            ),
+        },
+    ]
+    t0 = time.perf_counter()
+    out = pipe(messages, max_new_tokens=60, do_sample=False, return_full_text=False)
+    text = out[0]["generated_text"].strip()
+    text = re.sub(r'[⺀-鿿豈-﫿＀-￯]+', '', text)
+    text = " ".join(text.split())[:240]
+    log_call(
+        "visual", "local", MODEL_ID, time.perf_counter() - t0,
+        tokens_out=len(pipe.tokenizer.encode(text)), device=str(pipe.device),
+    )
+    return text

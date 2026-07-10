@@ -5,10 +5,7 @@ from telemetry import image_cost, log_call
 
 
 def dalle(msg: str) -> str:
-    prompt = (
-        "Hyper-realistic photo of exactly one plated dish, matching this brief "
-        "of ingredients and craved characteristics: " + msg
-    )
+    prompt = "Hyper-realistic photo of a single plated serving of: " + msg
 
     kwargs = {
         "model": IMAGE_MODEL,
