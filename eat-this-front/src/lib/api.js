@@ -47,6 +47,18 @@ export const nextSegmentImage = async (imageFile, options = {}) => {
     return parseResponse(response);
 };
 
+export const nextDishScope = async (msg, options = {}) => {
+    const response = await fetch(`${API_URL}/recipe/scope`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: msg }),
+        ...options,
+    });
+    return parseResponse(response);
+};
+
 export const nextRecipeDescription = async (msg, options = {}) => {
     const response = await fetch(`${API_URL}/recipe/description`, {
         method: 'POST',

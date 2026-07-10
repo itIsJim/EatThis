@@ -11,13 +11,21 @@ from fastapi.responses import JSONResponse
 from openai import OpenAIError
 from pydantic import BaseModel
 
+import time
+
 from auth.deps import APP_MODE, HOSTED, charge_credits, optional_user
 from openai_api.api.dalle_api import dalle
 from openai_api.api.gpt_chat_api import gpt_chat
 from openai_api.api.vision_api import vision
+from telemetry import HTTP_LOGGER, LLM_LOGGER, setup_logging
+
+setup_logging()
 
 RECIPE_COST = int(os.environ.get("RECIPE_COST", 1))
 IMAGE_COST = int(os.environ.get("IMAGE_COST", 4))
+# "local" = recipe written by the local model (free, no OpenAI tokens);
+# "openai" = gpt-4o-mini (charges RECIPE_COST in hosted mode)
+RECIPE_ENGINE = os.environ.get("RECIPE_ENGINE", "local").lower()
 
 origins = [o.strip() for o in os.environ.get(
     "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
@@ -29,6 +37,16 @@ if HOSTED:
     from auth.routes import router as auth_router
 
     app.include_router(auth_router)
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    HTTP_LOGGER.info(
+        f"{request.method} {request.url.path} -> {response.status_code} in {time.perf_counter() - t0:.2f}s"
+    )
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -108,7 +126,7 @@ async def img_segment(image_file: UploadFile = File(...)):
         except Exception as e:
             # Segmentation is best-effort: the preview degrades to no masks,
             # but the ingredient list must still reach the client.
-            print(f"SAM 3 segmentation failed: {e}")
+            LLM_LOGGER.warning(f"segmentation failed (degrading to no masks): {e}")
 
     return JSONResponse(content={
         "message": "Image segmented",
@@ -116,15 +134,35 @@ async def img_segment(image_file: UploadFile = File(...)):
     })
 
 
+@app.post("/recipe/scope")
+async def recipe_scope(message_body: MessageSchema):
+    """Local LLM analysis of achievable dish directions — free, no credits."""
+    try:
+        from analysis.dish_scope import dish_scope
+
+        scope = await run_in_threadpool(dish_scope, message_body.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dish analysis failed: {e}")
+    return JSONResponse(content={"message": "Scope analyzed", "data": scope})
+
+
 @app.post("/recipe/description")
 async def recipe_description(message_body: MessageSchema, user=Depends(optional_user)):
-    charge_credits(user, RECIPE_COST)
-    try:
-        gpt_chat_result = await run_in_threadpool(gpt_chat, message_body.message)
-    except OpenAIError as e:
-        raise HTTPException(status_code=502, detail=f"OpenAI recipe request failed: {e}")
+    if RECIPE_ENGINE == "openai":
+        charge_credits(user, RECIPE_COST)
+        try:
+            result = await run_in_threadpool(gpt_chat, message_body.message)
+        except OpenAIError as e:
+            raise HTTPException(status_code=502, detail=f"OpenAI recipe request failed: {e}")
+    else:
+        try:
+            from analysis.dish_scope import local_recipe
 
-    return JSONResponse(content={"message": "Recipe processed", "data": gpt_chat_result})
+            result = await run_in_threadpool(local_recipe, message_body.message)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Local recipe generation failed: {e}")
+
+    return JSONResponse(content={"message": "Recipe processed", "data": result})
 
 
 @app.post("/dalle/generate")

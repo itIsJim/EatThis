@@ -2,7 +2,7 @@
 import React, {useContext, useEffect, useRef, useState} from 'react';
 import {useDropzone} from 'react-dropzone';
 import {PlusCircleOutlined, CameraOutlined} from "@ant-design/icons";
-import {nextUploadImage, nextRecipeDescription, nextDalleGeneration, nextSegmentImage} from "@/lib/api";
+import {nextUploadImage, nextRecipeDescription, nextDalleGeneration, nextSegmentImage, nextDishScope} from "@/lib/api";
 import TextPrompt from "@/app/components/utils/textPrompt/TextPrompt";
 import {useTextContext} from "@/app/store/store";
 import ImagePrompt from "@/app/components/utils/ImagePrompt/ImagePrompt";
@@ -18,6 +18,14 @@ const thumbsContainer = {
     marginBottom: 32,
     justifyContent: 'center'
 };
+
+const TRAIT_DIMENSIONS = ['taste', 'temperature', 'texture', 'style'];
+const FALLBACK_TRAITS = [
+    {name: 'savory', dimension: 'taste'},
+    {name: 'sweet', dimension: 'taste'},
+    {name: 'hot', dimension: 'temperature'},
+    {name: 'cold', dimension: 'temperature'},
+];
 
 const dropzone = {
     flex: 1,
@@ -49,6 +57,9 @@ const Upload = (props) => {
     const [cameraStream, setCameraStream] = useState(null);
     const [segData, setSegData] = useState(null);
     const [isSegmenting, setIsSegmenting] = useState(false);
+    const [traitOptions, setTraitOptions] = useState([]);
+    const [traits, setTraits] = useState([]);
+    const [isTraitLoading, setIsTraitLoading] = useState(false);
     const videoRef = useRef(null);
 
     const setPhoto = (file) => {
@@ -58,6 +69,8 @@ const Upload = (props) => {
             return [withPreview];
         });
         setSegData(null);
+        setTraitOptions([]);
+        setTraits([]);
         setImgDescription('');
         setNewRecipe('');
         setNewDALLEURL('');
@@ -98,12 +111,30 @@ const Upload = (props) => {
                 setSegData(res?.data || null);
                 const found = res?.data?.ingredients;
                 updateTextPromptContext(found
-                    ? `I found: ${found}.\nHappy with it? Hit Make recipe!`
+                    ? `I found: ${found}.\nWhat are you craving? Pick a few vibes and hit Make recipe!`
                     : "I couldn't spot anything — try another photo, or hit Make recipe anyway.");
+                if (found) {
+                    setIsTraitLoading(true);
+                    nextDishScope(found)
+                        .then(scope => {
+                            if (cancelled) return;
+                            const options = Array.isArray(scope?.data)
+                                ? scope.data.filter(t => t?.name && t?.dimension)
+                                : [];
+                            setTraitOptions(options.length ? options : FALLBACK_TRAITS);
+                        })
+                        .catch(error => {
+                            console.error("Trait analysis failed:", error);
+                            if (!cancelled) setTraitOptions(FALLBACK_TRAITS);
+                        })
+                        .finally(() => { if (!cancelled) setIsTraitLoading(false); });
+                }
             } catch (error) {
                 if (cancelled) return;
                 setSegData(null);
-                updateTextPromptContext("Couldn't analyze the photo — you can still hit Make recipe.");
+                updateTextPromptContext(error?.status === undefined
+                    ? "Can't reach the kitchen server. Is the backend running?"
+                    : "Couldn't analyze the photo — you can still hit Make recipe.");
                 console.error("Error segmenting image:", error);
             } finally {
                 if (!cancelled) setIsSegmenting(false);
@@ -170,6 +201,7 @@ const Upload = (props) => {
     const paidCallError = (error, fallbackMsg) => {
         if (error?.status === 401) return "Please sign in (top right) to generate recipes.";
         if (error?.status === 402) return "You're out of credits — top up to keep cooking.";
+        if (error?.status === undefined) return "Can't reach the kitchen server. Is the backend running?";
         return fallbackMsg;
     };
 
@@ -220,12 +252,34 @@ const Upload = (props) => {
             image.src = url;
         });
 
+    const composeBrief = (ingredients) => {
+        if (!ingredients) return ingredients;
+        const parts = [`Ingredients: ${ingredients}`];
+        if (traits.length) {
+            const byDimension = {};
+            traitOptions.forEach(t => {
+                if (traits.includes(t.name)) {
+                    (byDimension[t.dimension] = byDimension[t.dimension] || []).push(t.name);
+                }
+            });
+            const constraints = Object.entries(byDimension)
+                .map(([dimension, words]) => `${words.join(' and ')} (${dimension})`)
+                .join(', ');
+            parts.push(`The dish MUST be: ${constraints}.`);
+        }
+        return parts.join('\n');
+    };
+
+    const toggleTrait = (value) => {
+        setTraits(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
+    };
+
     const handleProcess = async () => {
         try {
             setIsSaved(false)
             if (segData?.ingredients) {
                 // Ingredients already detected during the preview stage
-                setImgDescription(segData.ingredients);
+                setImgDescription(composeBrief(segData.ingredients));
                 return;
             }
             setIsProcessing(true)
@@ -233,7 +287,7 @@ const Upload = (props) => {
             const formData = new FormData();
             formData.append('image_file', compressed)
             const responseData = await nextUploadImage(formData);
-            setImgDescription(responseData?.data)
+            setImgDescription(composeBrief(responseData?.data))
         } catch (error) {
             updateTextPromptContext("Oops something went wrong when processing the image...");
             console.error("Error processing image upload:", error);
@@ -310,6 +364,17 @@ const Upload = (props) => {
             }
             <div className="flex w-full flex-col items-center gap-4">
                 {
+                    imgDescription && !newDALLEURL &&
+                    <div className="flex aspect-square w-full max-w-md flex-col items-center justify-center gap-5 border-2 border-black dark:border-white">
+                        <div className="flex items-end gap-3" aria-hidden="true">
+                            <span className="h-4 w-4 animate-bounce rounded-full bg-black dark:bg-white"/>
+                            <span className="h-4 w-4 animate-bounce bg-black [animation-delay:120ms] dark:bg-white"/>
+                            <span className="h-0 w-0 animate-bounce border-b-[16px] border-l-[9px] border-r-[9px] border-b-black border-l-transparent border-r-transparent [animation-delay:240ms] dark:border-b-white"/>
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-[0.3em]">Rendering dish</span>
+                    </div>
+                }
+                {
                     imagePrompt && imagePrompt?.data &&  <ImagePrompt obj={imagePrompt} url={imagePrompt?.data}/>
                 }
                 {
@@ -317,8 +382,42 @@ const Upload = (props) => {
                 }
             </div>
             {
+                files?.length > 0 && !isSegmenting && segData?.ingredients &&
+                <div className="mt-5 flex flex-col items-center gap-2">
+                    {isTraitLoading && traitOptions.length === 0 && (
+                        <div className="flex items-center gap-2">
+                            {[0, 1, 2, 3].map(i => (
+                                <span key={i} className="h-8 w-16 animate-pulse border-2 border-dashed border-black dark:border-white"/>
+                            ))}
+                        </div>
+                    )}
+                    {TRAIT_DIMENSIONS.map(dimension => {
+                        const group = traitOptions.filter(t => t.dimension === dimension);
+                        if (!group.length) return null;
+                        return (
+                            <div key={dimension} className="flex w-full max-w-xl flex-wrap items-center justify-center gap-2">
+                                <span className="w-24 shrink-0 text-right text-[10px] font-bold uppercase tracking-[0.25em] opacity-50">
+                                    {dimension}
+                                </span>
+                                {group.map(({name}) => (
+                                    <Button
+                                        key={name}
+                                        variant="outline"
+                                        size="sm"
+                                        className={traits.includes(name) ? 'bg-foreground text-background' : ''}
+                                        onClick={() => toggleTrait(name)}
+                                    >
+                                        {name}
+                                    </Button>
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            }
+            {
                 files?.length > 0?
-                    <div className="mt-5 flex justify-center items-center">
+                    <div className="mt-4 flex justify-center items-center">
                         <Button variant="outline" disabled={isLoading || isSegmenting} onClick={handleProcess}>
                             {isSegmenting ? "Analyzing ..." : "Make recipe"}
                         </Button>
