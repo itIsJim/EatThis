@@ -2,22 +2,23 @@
 
 EatThis is an AI-powered recipe generator. From a single photograph of ingredients — uploaded or captured in-app — it identifies the ingredients, visualizes them with instance segmentation, generates a recipe, and renders an illustration of the finished dish.
 
+The application is a single Python service: FastAPI serves both the JSON API and a server-rendered UI (Jinja2 + htmx). Client-side JavaScript is limited to camera capture and the theme toggle; all logic, layout computation, and animation timing run in Python, with animations executed as CSS keyframes.
+
 See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model architecture.
 
 ## Project Structure
 
-| Directory | Stack | Role |
+| Path | Stack | Role |
 |---|---|---|
-| `eat-this-back` | Python, FastAPI, PyTorch | API server: OpenAI integration, SAM 3 segmentation, Supabase-backed auth/credits (hosted mode) |
-| `eat-this-front` | Next.js 14, React 18, Tailwind CSS 4, shadcn/ui, GSAP | Web client: upload/camera capture, animated segmentation preview, light/dark theme |
+| `eat-this-back` | Python, FastAPI, PyTorch, Jinja2/htmx | Complete application: UI, API, OpenAI integration, SAM 3 segmentation, local LLM analysis |
+| `eat-this-back/web` | Python + templates | Server-rendered UI: pages, htmx fragments, mask-overlay layout engine, saved-recipes store |
 
 ## Requirements
 
 - Python 3.11+ (tested on 3.13)
-- Node.js 18+
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 - A [Hugging Face access token](https://huggingface.co/settings/tokens) with approved access to [`facebook/sam3`](https://huggingface.co/facebook/sam3)
-- Approximately 9 GB of disk space (PyTorch, SAM 3, and dish-analysis model weights)
+- Approximately 9 GB of disk space (PyTorch, SAM 3, and local LLM weights)
 
 ## Configuration
 
@@ -32,16 +33,14 @@ Optional overrides (defaults shown):
 
 ```
 OPENAI_VISION_MODEL=gpt-4o-mini
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_IMAGE_MODEL=dall-e-3
+OPENAI_IMAGE_MODEL=gpt-image-1.5
 OPENAI_VISION_DETAIL=low
+DISH_SCOPE_MODEL=Qwen/Qwen2.5-1.5B-Instruct
+RECIPE_ENGINE=local
+LOG_LEVEL=INFO
 ```
 
-To point the frontend at a non-default backend address, set `NEXT_PUBLIC_API_URL` in `eat-this-front/.env.local` (default: `http://127.0.0.1:8000`).
-
 ## Running
-
-Backend:
 
 ```bash
 cd eat-this-back
@@ -50,28 +49,21 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Interactive API documentation: http://127.0.0.1:8000/docs
-
-Frontend:
-
-```bash
-cd eat-this-front
-npm install
-npm run dev
-```
-
-Application: http://localhost:3000
+Application: http://127.0.0.1:8000 · API documentation: http://127.0.0.1:8000/docs
 
 Notes:
-- SAM 3 weights (~3.4 GB) are downloaded automatically on the first segmentation request.
+- Model weights (~6.5 GB total) download automatically on first use.
 - Browser camera access requires HTTPS or `localhost`.
 
 ## API Reference
+
+The UI is served at `/`, `/app`, and `/list` (htmx fragments under `/ui/*`). JSON endpoints:
 
 | Endpoint | Method | Request | Response |
 |---|---|---|---|
 | `/image/segment` | POST | multipart `image_file` (JPEG/PNG/WebP) | Ingredient list and labeled segmentation polygons |
 | `/image/upload` | POST | multipart `image_file` | Ingredient list (identification only) |
-| `/recipe/scope` | POST | `{"message": "<ingredients>"}` | Candidate dish directions (local LLM, no API cost) |
+| `/recipe/scope` | POST | `{"message": "<ingredients>"}` | Dimension-tagged culinary characteristics (local LLM) |
 | `/recipe/description` | POST | `{"message": "<brief>"}` | Formatted recipe text |
 | `/dalle/generate` | POST | `{"message": "<brief>"}` | Generated image (URL or data URI) |
+| `/health`, `/config` | GET | — | Service status / mode and credit costs |

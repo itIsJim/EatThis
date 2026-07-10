@@ -8,32 +8,30 @@ This document describes the EatThis processing pipeline and the role of each mod
 photo (upload / camera)
         │
         ▼
-[1] Client-side preprocessing          (browser)
+[1] Preprocessing                      (PIL, server)
         │
         ▼
 [2] Ingredient identification          (GPT-4o-mini, vision)
         │
         ▼
-[3] Instance segmentation              (SAM 3, local inference)
+[3a] Instance segmentation ──┐         (SAM 3, local)          ─ parallel
+[3b] Recipe pre-generation ──┘         (local LLM)             ─ parallel
         │
         ▼
-[4] Preview rendering                  (SVG + GSAP, browser)
-        │
-[4b] Dish-scope analysis               (Qwen2.5-1.5B, local)   ─ concurrent with [4c]
-[4c] Taste preference input            (user: salty/sweet, hot/cold)
+[4] Preview rendering                  (server-rendered SVG + CSS)
         │  user confirms
         ▼
-[5a] Recipe generation ──┐             (GPT-4o-mini, chat)     ─ parallel
-[5b] Dish illustration ──┘             (gpt-image-1.5)         ─ parallel
+[5a] Recipe served from cache          (pre-generated in 3b)
+[5b] Dish illustration                 (gpt-image-1.5, prompted with dish name + visual brief)
 ```
 
-### 1. Client-side preprocessing
+### 1. Preprocessing
 
-Captured or uploaded images are downscaled in the browser (canvas, longest edge ≤ 1024 px, JPEG q0.85) before transmission. This bounds upload latency, vision-token consumption, and segmentation input size irrespective of source resolution.
+Captured or uploaded images are downscaled server-side (PIL, longest edge ≤ 1024 px, JPEG q85) on receipt. This bounds vision-token consumption and segmentation input size irrespective of source resolution.
 
 ### 2. Ingredient identification
 
-A single vision request to `gpt-4o-mini` returns a comma-separated list of visible items. Images are submitted at `detail: low` (fixed ~2.8K image tokens), which empirically matches high-detail accuracy for countertop ingredient scenes at roughly one-tenth the cost. The model output serves two purposes: the text-prompt vocabulary for segmentation (step 3) and the input for recipe generation (step 5a).
+A single vision request to `gpt-4o-mini` returns a comma-separated list of visible items. Images are submitted at `detail: low` (fixed ~2.8K image tokens), which empirically matches high-detail accuracy for countertop ingredient scenes at roughly one-tenth the cost. The model output serves two purposes: the text-prompt vocabulary for segmentation (step 3a) and the input for recipe generation (step 3b).
 
 ### 3. Instance segmentation — SAM 3
 
@@ -46,25 +44,13 @@ Segmentation uses Meta's **SAM 3** (`facebook/sam3`), a promptable concept-segme
 
 ### 4. Preview rendering
 
-The client renders the photograph with an SVG overlay whose viewBox extends beyond the image into lateral gutters, guaranteeing mask registration at any display size. A GSAP timeline (~1.5 s total) animates, per mask with short staggers: a monochrome double-stroke outline drawn via stroke-dashoffset, a subtle fill, a leader line from the item to its label, and the ingredient name — set in the application typeface, placed as a callout in the gutter nearest the item and connected by the leader line to a square marker at the mask centroid. Label positions are collision-resolved vertically per side. The user reviews detected ingredients before committing to generation.
-
-### 4b–4c. Dish-scope analysis and taste preference
-
-While the user reviews the preview, two inputs are gathered concurrently:
-
-- **Dish-scope analysis** — a small open-weight LLM (`Qwen/Qwen2.5-1.5B-Instruct`, Apache-2.0, ungated) runs locally to propose up to four dish directions achievable with the detected ingredients, each tagged salty/sweet and hot/cold. Zero API cost; greedy decoding, ≤180 new tokens.
-- **Taste preference** — optional salty/sweet and hot/cold selections in the UI; unset dimensions are left to the model.
-
-These are combined with the ingredient list into a single generation brief (`Ingredients / Craving / Candidate dishes`).
+Overlay layout is computed server-side (`web/layout.py`): labels are deduplicated per ingredient; each label is placed directly on its item when the tag fits the mask (threshold scaling with mask density), with the remainder rendered as gutter callouts capped at a golden-ratio minority and collision-resolved vertically. The server emits render-ready SVG in a viewBox extending into lateral gutters, guaranteeing mask registration at any display size. Animation (~1.5 s) is pure CSS: stroke-dashoffset line drawing with per-element delays computed in Python, subtle fills, leader lines, and label pop-ins. The user reviews detected ingredients before committing to generation.
 
 ### 5. Generation
 
-On confirmation, the brief is dispatched concurrently to:
+Recipe generation starts on the local LLM (`Qwen/Qwen2.5-1.5B-Instruct`, `RECIPE_ENGINE=local`) the moment ingredients are identified — concurrent with segmentation — so on confirmation the recipe is typically served from the pre-generation cache and printed immediately. A second local pass distills the recipe steps into a one-sentence **visual brief** (cooked state, colors, plating); the dish name plus this brief is the sole prompt for the illustration (`gpt-image-1.5`, 1024×1024). Ingredient emoji in the recipe are assigned deterministically from a keyword lexicon rather than trusted to the small model.
 
-- **Recipe generation** — `gpt-4o-mini` with a compact system prompt enforcing a fixed plain-text format (dish name, emoji-prefixed ingredients, en-dash steps), capped at 400 output tokens; instructed to honor the craving and may adapt a candidate dish.
-- **Dish illustration** — `gpt-image-1.5` (1024×1024), prompted from the same brief.
-
-Running these in parallel reduces end-to-end latency from `vision + recipe + image` to `vision + max(recipe, image)`. No image or vision call is repeated after the preview stage.
+Net API surface per run: one low-detail vision call and one compact image prompt; all text generation is local. `RECIPE_ENGINE=openai` substitutes `gpt-4o-mini` at confirmation time (no pre-generation, to avoid speculative API spend).
 
 ## Cost and Latency Profile
 
@@ -74,8 +60,8 @@ Per full run (defaults, as of 2026-07):
 |---|---|---|---|
 | Identification | gpt-4o-mini (detail: low) | 1–3 s | <$0.001 |
 | Segmentation | SAM 3 (local) | 3–10 s / prompt* | $0 |
-| Recipe | gpt-4o-mini (≤400 tokens out) | 2–5 s | <$0.001 |
-| Illustration | DALL·E 3 | 10–20 s | ~$0.04 |
+| Recipe + visual brief | Qwen2.5-1.5B (local) | 3–15 s (hidden behind masking) | $0 |
+| Illustration | gpt-image-1.5 | 10–25 s | ~$0.01–0.04 |
 
 \* Apple Silicon (MPS). First request per process additionally incurs model load (~10–20 s); first request ever downloads ~3.4 GB of weights.
 
