@@ -18,10 +18,13 @@ photo (upload / camera)
         │
         ▼
 [4] Preview rendering                  (SVG + GSAP, browser)
+        │
+[4b] Dish-scope analysis               (Qwen2.5-1.5B, local)   ─ concurrent with [4c]
+[4c] Taste preference input            (user: salty/sweet, hot/cold)
         │  user confirms
         ▼
 [5a] Recipe generation ──┐             (GPT-4o-mini, chat)     ─ parallel
-[5b] Dish illustration ──┘             (DALL·E 3)              ─ parallel
+[5b] Dish illustration ──┘             (gpt-image-1.5)         ─ parallel
 ```
 
 ### 1. Client-side preprocessing
@@ -45,12 +48,21 @@ Segmentation uses Meta's **SAM 3** (`facebook/sam3`), a promptable concept-segme
 
 The client renders the photograph with an SVG overlay whose viewBox extends beyond the image into lateral gutters, guaranteeing mask registration at any display size. A GSAP timeline (~1.5 s total) animates, per mask with short staggers: a monochrome double-stroke outline drawn via stroke-dashoffset, a subtle fill, a leader line from the item to its label, and the ingredient name — set in the application typeface, placed as a callout in the gutter nearest the item and connected by the leader line to a square marker at the mask centroid. Label positions are collision-resolved vertically per side. The user reviews detected ingredients before committing to generation.
 
+### 4b–4c. Dish-scope analysis and taste preference
+
+While the user reviews the preview, two inputs are gathered concurrently:
+
+- **Dish-scope analysis** — a small open-weight LLM (`Qwen/Qwen2.5-1.5B-Instruct`, Apache-2.0, ungated) runs locally to propose up to four dish directions achievable with the detected ingredients, each tagged salty/sweet and hot/cold. Zero API cost; greedy decoding, ≤180 new tokens.
+- **Taste preference** — optional salty/sweet and hot/cold selections in the UI; unset dimensions are left to the model.
+
+These are combined with the ingredient list into a single generation brief (`Ingredients / Craving / Candidate dishes`).
+
 ### 5. Generation
 
-On confirmation, the ingredient list from step 2 is dispatched concurrently to:
+On confirmation, the brief is dispatched concurrently to:
 
-- **Recipe generation** — `gpt-4o-mini` with a compact system prompt enforcing a fixed plain-text format (dish name, emoji-prefixed ingredients, en-dash steps), capped at 400 output tokens.
-- **Dish illustration** — DALL·E 3 (1024×1024, standard quality), prompted from the ingredient list.
+- **Recipe generation** — `gpt-4o-mini` with a compact system prompt enforcing a fixed plain-text format (dish name, emoji-prefixed ingredients, en-dash steps), capped at 400 output tokens; instructed to honor the craving and may adapt a candidate dish.
+- **Dish illustration** — `gpt-image-1.5` (1024×1024), prompted from the same brief.
 
 Running these in parallel reduces end-to-end latency from `vision + recipe + image` to `vision + max(recipe, image)`. No image or vision call is repeated after the preview stage.
 

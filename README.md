@@ -2,7 +2,7 @@
 
 EatThis is an AI-powered recipe generator. From a single photograph of ingredients — uploaded or captured in-app — it identifies the ingredients, visualizes them with instance segmentation, generates a recipe, and renders an illustration of the finished dish.
 
-See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model architecture, and [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment (Vercel + Docker + Supabase) and the open/hosted mode model.
+See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model architecture.
 
 ## Project Structure
 
@@ -17,7 +17,7 @@ See [METHODOLOGY.md](METHODOLOGY.md) for the processing pipeline and model archi
 - Node.js 18+
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 - A [Hugging Face access token](https://huggingface.co/settings/tokens) with approved access to [`facebook/sam3`](https://huggingface.co/facebook/sam3)
-- Approximately 6 GB of disk space (PyTorch and SAM 3 model weights)
+- Approximately 9 GB of disk space (PyTorch, SAM 3, and dish-analysis model weights)
 
 ## Configuration
 
@@ -72,5 +72,6 @@ Notes:
 |---|---|---|---|
 | `/image/segment` | POST | multipart `image_file` (JPEG/PNG/WebP) | Ingredient list and labeled segmentation polygons |
 | `/image/upload` | POST | multipart `image_file` | Ingredient list (identification only) |
-| `/recipe/description` | POST | `{"message": "<ingredients>"}` | Formatted recipe text |
-| `/dalle/generate` | POST | `{"message": "<description>"}` | Generated image URL |
+| `/recipe/scope` | POST | `{"message": "<ingredients>"}` | Candidate dish directions (local LLM, no API cost) |
+| `/recipe/description` | POST | `{"message": "<brief>"}` | Formatted recipe text |
+| `/dalle/generate` | POST | `{"message": "<brief>"}` | Generated image (URL or data URI) |

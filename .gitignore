@@ -19,3 +19,10 @@ eat-this-front/.env*.local
 
 # Runtime data (SQLite user db)
 eat-this-back/data/
+
+# Deployment-only artifacts (kept local, out of repo scope)
+supabase/
+docker-compose.yml
+DEPLOYMENT.md
+# eat-this-back/Dockerfile and .dockerignore stay tracked: Zeabur builds
+# the image from the repo and needs both.
